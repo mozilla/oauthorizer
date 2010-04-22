@@ -1,0 +1,3 @@
+content   oauthorizer                 content/
+overlay	chrome://messenger/content/messenger.xul   chrome://oauthorizer/content/overlay.xul
+resource oauthorizer ./

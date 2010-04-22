@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE overlay PUBLIC "-//MOZILLA//DTD XUL V1.0//EN" "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+<overlay id="oauthorizer-overlay"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    <script type="application/x-javascript">
+    <![CDATA[
+    function testAuthDialog() {
+        window.openDialog("chrome://oauthorizer/content/tester.xul", "Test Auth", "chrome,centerscreen,modal,width=350,height=400");
+    }
+    ]]>
+    </script>
+    
+    <!-- for testing -->
+    <menupopup id="taskPopup">
+        <menuitem id="test_oauth_login" label="Test OAuth login"
+                  oncommand='testAuthDialog()'/>
+    </menupopup>
+</overlay>

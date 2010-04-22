@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+<dialog id="soundcloud_loginDialog" 
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"    
+        buttons="cancel"
+        buttonlabelcancel="Cancel"
+	buttonaccesskeycancel="n"
+        ondialogcancel="return closeWindow();"
+        onload="loadLoginFrame()"
+	title="Login/Authorization Panel"
+	width="800"
+	height="600"
+	style="margin:5px 5px 5px 5px">
+
+  <script type="application/x-javascript">
+  <![CDATA[
+
+  function closeWindow ()
+  {
+    window.arguments[1].call(null, null);		
+    window.close();
+  }
+
+  function doneAuthorizing(oauth_verifier)
+  {
+    dump("doneAuthorizing: "+oauth_verifier+"\n");
+    window.arguments[1].call(null, oauth_verifier);		
+    window.close();
+  }
+		
+  var reporterListener = {
+
+    QueryInterface: function(aIID) {
+      if (aIID.equals(Components.interfaces.nsIWebProgressListener)   ||
+	  aIID.equals(Components.interfaces.nsIWebProgressListener2)  ||
+	  aIID.equals(Components.interfaces.nsISupportsWeakReference) ||
+	  aIID.equals(Components.interfaces.nsISupports))
+	return this;
+      throw Components.results.NS_NOINTERFACE;
+    },
+    onStateChange: function(/*in nsIWebProgress*/ aWebProgress,
+		       /*in nsIRequest*/ aRequest,
+		       /*in unsigned long*/ aStateFlags,
+		       /*in nsresult*/ aStatus) {
+      },
+  
+    onProgressChange: function(/*in nsIWebProgress*/ aWebProgress,
+			  /*in nsIRequest*/ aRequest,
+			  /*in long*/ aCurSelfProgress,
+			  /*in long */aMaxSelfProgress,
+			  /*in long */aCurTotalProgress,
+			  /*in long */aMaxTotalProgress) {
+      },
+  
+    onLocationChange: function(/*in nsIWebProgress*/ aWebProgress,
+			  /*in nsIRequest*/ aRequest,
+			  /*in nsIURI*/ aLocation) {
+      dump("onLocationChange: "+aLocation.spec+"\n");
+	if (aLocation.host == 'oauthcallback.local') {
+	  //var oauth_token = /oauth_token=([^&])/gi.exec(aLocation.spec)[1];
+	  var oauth_verifier = /oauth_verifier=([^&]*)/gi.exec(aLocation.spec);
+	  if (oauth_verifier) {
+	    dump("***** oauth_verifier: "+oauth_verifier[1]+"\n");
+	    doneAuthorizing(oauth_verifier[1]);
+	  }
+	}
+      },
+  
+    onStatusChange: function(/*in nsIWebProgress*/ aWebProgress,
+			/*in nsIRequest*/ aRequest,
+			/*in nsresult*/ aStatus,
+			/*in wstring*/ aMessage) {
+      },
+  
+    onSecurityChange: function(/*in nsIWebProgress*/ aWebProgress,
+			  /*in nsIRequest*/ aRequest,
+			  /*in unsigned long*/ aState) {
+      dump("onSecurityChange: ["+aRequest.name+"] state "+aState+"\n");
+      },
+    onProgressChange64: function() {
+      dump("onProgressChange64: \n");
+      },
+    onRefreshAttempted: function() {
+      dump("onRefreshAttempted: \n");
+      return true; }
+  }
+
+
+  function loadLoginFrame()
+  {
+    let nsIWebProgress = Components.interfaces.nsIWebProgress;
+    let browser = document.getElementById("oauth_loginFrame");
+    browser.addProgressListener(reporterListener, nsIWebProgress.NOTIFY_ALL);
+    var url = window.arguments[0];
+    if (url != "")
+	    browser.setAttribute("src", url);
+  }
+  ]]>
+  </script>
+  
+  <vbox flex="1">
+	  <browser type="content" src="" id="oauth_loginFrame" flex="1"/>
+	  <spacer height="5" />
+  </vbox>
+</dialog>

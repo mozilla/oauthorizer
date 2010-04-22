@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+<dialog id="test_loginDialog" 
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"    
+        buttons="accept"
+        onload=""
+	title="Test Login/Authorization"
+	width="700"
+	height="600"
+	style="margin:5px 5px 5px 5px">
+    <script src="chrome://oauthorizer/content/oauth.js" type="application/x-javascript"/>
+
+  <script type="application/x-javascript">
+  <![CDATA[
+    function openOAuthLogin(loginUrl, requestData, token, afterAuthCallback) {
+        var accessToken = null;
+        var callbackFunc = function(token)
+        {
+	  dump("got access token "+token+"\n");
+            accessToken = token;
+        };
+
+        var url = loginUrl + "?oauth_token=" + token;
+        window.openDialog("chrome://oauthorizer/content/loginPanel.xul",
+			  "Login/Authorization Panel",
+			  "chrome,centerscreen,modal,width=350,height=400",
+			  url, callbackFunc);
+        if (accessToken)
+        {
+            afterAuthCallback(requestData, accessToken);
+        }
+    }
+
+    function testYahooOAuth() {
+        var MozillaLabsContactsConsumerKey = "dj0yJmk9OXRIeE1Bbk9qeUF5JmQ9WVdrOU9YRkhNWGxMTjJzbWNHbzlPVFF6TURRNE5EWTEmcz1jb25zdW1lcnNlY3JldCZ4PWI3";
+        var MozillaLabsContactsConsumerSecret = "49a19e581d1920b49fd4977e744f1bd16a22ad2c"; // shh, don't tell anybody.
+	var svc = OAuthConsumer.getProvider("yahoo",
+				  MozillaLabsContactsConsumerKey,
+				  MozillaLabsContactsConsumerSecret);
+
+        function testresponse(success) {
+            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
+        }
+    
+        var oAuth = new OAuthConsumer.Authorizer(svc, testresponse);
+        oAuth.startAuthentication(); 
+    }
+
+  ]]>
+  </script>
+  
+  <vbox flex="1">
+	  <button label="Test Yahoo Auth" oncommand="testYahooOAuth();"/>
+  </vbox>
+</dialog>
