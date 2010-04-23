@@ -56,13 +56,21 @@
     onLocationChange: function(/*in nsIWebProgress*/ aWebProgress,
 			  /*in nsIRequest*/ aRequest,
 			  /*in nsIURI*/ aLocation) {
+      // XXX this needs to be cleaned up to handle differences better, the
+      // callback url should be configurable as well
       dump("onLocationChange: "+aLocation.spec+"\n");
-	if (aLocation.host == 'oauthcallback.local') {
-	  //var oauth_token = /oauth_token=([^&])/gi.exec(aLocation.spec)[1];
+	if (aLocation.host.indexOf('oauthcallback.local') >= 0) {
+	  // OAuth 1.0
 	  var oauth_verifier = /oauth_verifier=([^&]*)/gi.exec(aLocation.spec);
 	  if (oauth_verifier) {
 	    dump("***** oauth_verifier: "+oauth_verifier[1]+"\n");
 	    doneAuthorizing(oauth_verifier[1]);
+	  }
+	  // OAuth 2.0
+	  var oauth_code = /#access_token=([^&]*)/gi.exec(aLocation.spec);
+	  if (oauth_code) {
+	    dump("***** oauth_code: "+oauth_code[1]+"\n");
+	    doneAuthorizing(oauth_code[1]);
 	  }
 	}
       },

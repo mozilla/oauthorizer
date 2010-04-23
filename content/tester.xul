@@ -13,7 +13,7 @@
 
   <script type="application/x-javascript">
   <![CDATA[
-    function openOAuthLogin(loginUrl, requestData, token, afterAuthCallback) {
+    function openOAuthLogin(loginUrl, requestData, afterAuthCallback) {
         var accessToken = null;
         var callbackFunc = function(token)
         {
@@ -21,11 +21,10 @@
             accessToken = token;
         };
 
-        var url = loginUrl + "?oauth_token=" + token;
         window.openDialog("chrome://oauthorizer/content/loginPanel.xul",
 			  "Login/Authorization Panel",
 			  "chrome,centerscreen,modal,width=350,height=400",
-			  url, callbackFunc);
+			  loginUrl, callbackFunc);
         if (accessToken)
         {
             afterAuthCallback(requestData, accessToken);
@@ -43,7 +42,69 @@
             dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
         }
     
-        var oAuth = new OAuthConsumer.Authorizer(svc, testresponse);
+        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
+        oAuth.startAuthentication(); 
+    }
+
+    function testGoogleOAuth() {
+	// google lets us use anonymous to avoid registration, great for testing.
+	var svc = OAuthConsumer.getProvider("google", "anonymous", "anonymous");
+	svc.requestParams['xoauth_displayname'] = "Mozilla Authorizer";
+	svc.requestParams['scope'] = 'http://www.google.com/calendar/feeds';//http://www.google.com/m8/feeds/';
+        function testresponse(success) {
+            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
+        }
+    
+        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
+        oAuth.startAuthentication(); 
+    }
+
+
+    function testTwitterOAuth() {
+	var svc = OAuthConsumer.getProvider("twitter", "lppkBgcpuhe2TKZIRVoQg", "M6hwPkgEyqxkDz583LFYAv5dTVg1AsKIXHFPiIFhsM");
+        function testresponse(success) {
+            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
+        }
+    
+        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
+        oAuth.startAuthentication(); 
+    }
+
+    function testLinkedinOAuth() {
+	var svc = OAuthConsumer.getProvider("linkedin",
+					    "Ro8OWZrx0j8HaZPHyRxB9IEx8ZPjSlWksYW4PcPXkyFBWNZEZmQ-sLYShtpMk1g7",
+					    "pmpd9ZHZu2tDHiwDn3rqiBuxLluzltrSbFjIjZbebwxQyHzA09VxT-cXrtEJxZ-t");
+        function testresponse(success) {
+            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
+        }
+    
+        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
+        oAuth.startAuthentication(); 
+    }
+
+    function testPlaxoOAuth() {
+	// plaxo doesn't use a secret
+	var svc = OAuthConsumer.getProvider("plaxo",
+					    "anonymous",
+					    "");
+        function testresponse(success) {
+            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
+        }
+    
+        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
+        oAuth.startAuthentication(); 
+    }
+    function testFacebookOAuth() {
+	var svc = OAuthConsumer.getProvider("facebook", "115822435112164", "11f38b9baed44a8c3c7eb44ed47b8029");
+	svc.requestParams['scope'] = 'friends_birthday,friends_online_presence,friends_photos,friends_website';
+	svc.requestParams['type'] = "user_agent";
+	svc.requestParams['display'] = "popup";
+	
+        function testresponse(success) {
+            dump("*********FINISHED**********\naccess token: "+svc.token+"\n");
+        }
+    
+        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
         oAuth.startAuthentication(); 
     }
 
@@ -52,5 +113,10 @@
   
   <vbox flex="1">
 	  <button label="Test Yahoo Auth" oncommand="testYahooOAuth();"/>
+	  <button label="Test Google Auth" oncommand="testGoogleOAuth();"/>
+	  <button label="Test Twitter Auth" oncommand="testTwitterOAuth();"/>
+	  <button label="Test LinkedIn Auth" oncommand="testLinkedinOAuth();"/>
+	  <button label="Test Plaxo Auth" oncommand="testPlaxoOAuth();"/>
+	  <button label="Test Facebook Auth" oncommand="testFacebookOAuth();"/>
   </vbox>
 </dialog>
