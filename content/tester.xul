@@ -8,7 +8,7 @@
 	title="Test Login/Authorization"
 	width="700"
 	height="600"
-	style="margin:5px 5px 5px 5px">
+	style="margin:5px 5px 5px 5px; max-width: 700px;">
     <script src="chrome://oauthorizer/content/oauth.js" type="application/x-javascript"/>
 
   <script type="application/x-javascript">
@@ -56,10 +56,18 @@
 	let [key, secret, params] = oauthdata[provider];
         function testCallback(svc) {
             dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
+	    document.getElementById("accessToken").setAttribute('value', svc.token);
+	    document.getElementById("secret").setAttribute('value', svc.tokenSecret);
         }
 	OAuthConsumer.authorize(provider, key, secret, testCallback, params);
     }
 
+    function testDialog() {
+        window.openDialog("chrome://oauthorizer/content/loginPanel.xul",
+			  "Login/Authorization Panel",
+			  "chrome,centerscreen,modal,dialog=no",
+			  "", function(){});
+    }
   ]]>
   </script>
   
@@ -70,5 +78,24 @@
 	  <button label="Test LinkedIn Auth" oncommand="testProvider('linkedin');"/>
 	  <button label="Test Plaxo Auth" oncommand="testProvider('plaxo');"/>
 	  <button label="Test Facebook Auth" oncommand="testProvider('facebook');"/>
+	  <button label="Test Blank Dialog" oncommand="testDialog();"/>
+  </vbox>
+  <vbox>
+    <grid>
+        <columns>
+            <column />
+            <column  flex="1"/>
+        </columns>
+        <rows>
+            <row  >
+                <label value="Access Token:"/>
+                <label id="accessToken" value="empty" crop="end"/>
+            </row>
+            <row  >
+                <label value="Secret:"/>
+                <label id="secret" value="empty" crop="end"/>
+            </row>
+        </rows>
+    </grid>
   </vbox>
 </dialog>

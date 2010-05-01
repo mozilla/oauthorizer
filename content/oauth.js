@@ -11,9 +11,11 @@
 * for the specific language governing rights and limitations under the
 * License.
 *
-* The Original Code is FireUploader
+* Based on concepts from FireUploader
+* The Original Code is OAuthorizer
 *
-* The Initial Developer of the Original Code is Rahul Jonna.
+* The Initial Developer of the FireUploader is Rahul Jonna.
+* The Initial Developer of the OAuthorizer is Shane Caraveo.
 *
 * Portions created by the Initial Developer are Copyright (C) 2007-2009
 * the Initial Developer. All Rights Reserved.
@@ -101,9 +103,9 @@ var OAuthConsumer = {};
                 serviceProvider:
                 {
                   signatureMethod     : "HMAC-SHA1",
-                  requestTokenURL     : "http://twitter.com/oauth/request_token",
-                  userAuthorizationURL: "http://twitter.com/oauth/authorize",
-                  accessTokenURL      : "http://twitter.com/oauth/access_token", 
+                  requestTokenURL     : "https://twitter.com/oauth/request_token",
+                  userAuthorizationURL: "https://twitter.com/oauth/authorize",
+                  accessTokenURL      : "https://twitter.com/oauth/access_token", 
                   echoURL             : ""
                 }
             }
@@ -143,9 +145,9 @@ var OAuthConsumer = {};
                 serviceProvider:
                 {
                   signatureMethod     : "PLAINTEXT",
-                  requestTokenURL     : "http://www.plaxo.com/oauth/request",
-                  userAuthorizationURL: "http://www.plaxo.com/oauth/authorize",
-                  accessTokenURL      : "http://www.plaxo.com/oauth/activate", 
+                  requestTokenURL     : "https://www.plaxo.com/oauth/request",
+                  userAuthorizationURL: "https://www.plaxo.com/oauth/authorize",
+                  accessTokenURL      : "https://www.plaxo.com/oauth/activate", 
                   echoURL             : ""
                 }
             }
@@ -404,8 +406,8 @@ var OAuthConsumer = {};
         };
 
         window.openDialog("chrome://oauthorizer/content/loginPanel.xul",
-			  "Login/Authorization Panel",
-			  "chrome,centerscreen,modal,width=350,height=400",
+			  "Login and Authorization",
+			  "chrome,centerscreen,modal,dialog=no",
 			  loginUrl, callbackFunc);
         if (accessToken)
         {
