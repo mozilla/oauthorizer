@@ -13,110 +13,62 @@
 
   <script type="application/x-javascript">
   <![CDATA[
-    function openOAuthLogin(loginUrl, requestData, afterAuthCallback) {
-        var accessToken = null;
-        var callbackFunc = function(token)
-        {
-	  dump("got access token "+token+"\n");
-            accessToken = token;
-        };
-
-        window.openDialog("chrome://oauthorizer/content/loginPanel.xul",
-			  "Login/Authorization Panel",
-			  "chrome,centerscreen,modal,width=350,height=400",
-			  loginUrl, callbackFunc);
-        if (accessToken)
-        {
-            afterAuthCallback(requestData, accessToken);
-        }
+    // this is an example of using oauthorizer
+    
+    // every addon or application should provide its own keys, 
+    // provider = [key, secret, params]
+    var oauthdata = {
+	'yahoo': [
+	    "dj0yJmk9OXRIeE1Bbk9qeUF5JmQ9WVdrOU9YRkhNWGxMTjJzbWNHbzlPVFF6TURRNE5EWTEmcz1jb25zdW1lcnNlY3JldCZ4PWI3",
+	    "49a19e581d1920b49fd4977e744f1bd16a22ad2c",
+	    null
+	],
+	'google': [
+	    "anonymous",
+	    "anonymous",
+	    {
+	    'xoauth_displayname': "Mozilla Authorizer",
+	    'scope': 'http://www.google.com/m8/feeds' // contacts
+	    }
+	],
+	'twitter': [
+	    "lppkBgcpuhe2TKZIRVoQg",
+	    "M6hwPkgEyqxkDz583LFYAv5dTVg1AsKIXHFPiIFhsM",
+	    null
+	],
+	'linkedin': [
+	    "Ro8OWZrx0j8HaZPHyRxB9IEx8ZPjSlWksYW4PcPXkyFBWNZEZmQ-sLYShtpMk1g7",
+	    "pmpd9ZHZu2tDHiwDn3rqiBuxLluzltrSbFjIjZbebwxQyHzA09VxT-cXrtEJxZ-t",
+	    null
+	],
+	'plaxo': ['anonymous', '', null],
+	'facebook': [
+	    "115822435112164",
+	    "11f38b9baed44a8c3c7eb44ed47b8029",
+	    {
+	    'scope': 'friends_birthday,friends_online_presence,friends_photos,friends_website',
+	    'type': "user_agent",
+	    'display': "popup"
+	    }
+	]
     }
-
-    function testYahooOAuth() {
-        var MozillaLabsContactsConsumerKey = "dj0yJmk9OXRIeE1Bbk9qeUF5JmQ9WVdrOU9YRkhNWGxMTjJzbWNHbzlPVFF6TURRNE5EWTEmcz1jb25zdW1lcnNlY3JldCZ4PWI3";
-        var MozillaLabsContactsConsumerSecret = "49a19e581d1920b49fd4977e744f1bd16a22ad2c"; // shh, don't tell anybody.
-	var svc = OAuthConsumer.getProvider("yahoo",
-				  MozillaLabsContactsConsumerKey,
-				  MozillaLabsContactsConsumerSecret);
-
-        function testresponse(success) {
+    function testProvider(provider) {
+	let [key, secret, params] = oauthdata[provider];
+        function testCallback(svc) {
             dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
         }
-    
-        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
-        oAuth.startAuthentication(); 
-    }
-
-    function testGoogleOAuth() {
-	// google lets us use anonymous to avoid registration, great for testing.
-	var svc = OAuthConsumer.getProvider("google", "anonymous", "anonymous");
-	svc.requestParams['xoauth_displayname'] = "Mozilla Authorizer";
-	svc.requestParams['scope'] = 'http://www.google.com/calendar/feeds';//http://www.google.com/m8/feeds/';
-        function testresponse(success) {
-            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
-        }
-    
-        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
-        oAuth.startAuthentication(); 
-    }
-
-
-    function testTwitterOAuth() {
-	var svc = OAuthConsumer.getProvider("twitter", "lppkBgcpuhe2TKZIRVoQg", "M6hwPkgEyqxkDz583LFYAv5dTVg1AsKIXHFPiIFhsM");
-        function testresponse(success) {
-            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
-        }
-    
-        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
-        oAuth.startAuthentication(); 
-    }
-
-    function testLinkedinOAuth() {
-	var svc = OAuthConsumer.getProvider("linkedin",
-					    "Ro8OWZrx0j8HaZPHyRxB9IEx8ZPjSlWksYW4PcPXkyFBWNZEZmQ-sLYShtpMk1g7",
-					    "pmpd9ZHZu2tDHiwDn3rqiBuxLluzltrSbFjIjZbebwxQyHzA09VxT-cXrtEJxZ-t");
-        function testresponse(success) {
-            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
-        }
-    
-        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
-        oAuth.startAuthentication(); 
-    }
-
-    function testPlaxoOAuth() {
-	// plaxo doesn't use a secret
-	var svc = OAuthConsumer.getProvider("plaxo",
-					    "anonymous",
-					    "");
-        function testresponse(success) {
-            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
-        }
-    
-        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
-        oAuth.startAuthentication(); 
-    }
-    function testFacebookOAuth() {
-	var svc = OAuthConsumer.getProvider("facebook", "115822435112164", "11f38b9baed44a8c3c7eb44ed47b8029");
-	svc.requestParams['scope'] = 'friends_birthday,friends_online_presence,friends_photos,friends_website';
-	svc.requestParams['type'] = "user_agent";
-	svc.requestParams['display'] = "popup";
-	
-        function testresponse(success) {
-            dump("*********FINISHED**********\naccess token: "+svc.token+"\n");
-        }
-    
-        var oAuth = OAuthConsumer.getAuthorizer(svc, testresponse);
-        oAuth.startAuthentication(); 
+	OAuthConsumer.authorize(provider, key, secret, testCallback, params);
     }
 
   ]]>
   </script>
   
   <vbox flex="1">
-	  <button label="Test Yahoo Auth" oncommand="testYahooOAuth();"/>
-	  <button label="Test Google Auth" oncommand="testGoogleOAuth();"/>
-	  <button label="Test Twitter Auth" oncommand="testTwitterOAuth();"/>
-	  <button label="Test LinkedIn Auth" oncommand="testLinkedinOAuth();"/>
-	  <button label="Test Plaxo Auth" oncommand="testPlaxoOAuth();"/>
-	  <button label="Test Facebook Auth" oncommand="testFacebookOAuth();"/>
+	  <button label="Test Yahoo Auth" oncommand="testProvider('yahoo');"/>
+	  <button label="Test Google Auth" oncommand="testProvider('google');"/>
+	  <button label="Test Twitter Auth" oncommand="testProvider('twitter');"/>
+	  <button label="Test LinkedIn Auth" oncommand="testProvider('linkedin');"/>
+	  <button label="Test Plaxo Auth" oncommand="testProvider('plaxo');"/>
+	  <button label="Test Facebook Auth" oncommand="testProvider('facebook');"/>
   </vbox>
 </dialog>

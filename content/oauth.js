@@ -245,7 +245,7 @@ var OAuthConsumer = {};
         getUserAuthorization: function(results, token) {
             let self = this;
             let targetURL = this.service.serviceProvider.userAuthorizationURL + "?oauth_token=" + token;
-            openOAuthLogin(targetURL,
+            OAuthConsumer.openDialog(targetURL,
                            results,
                            function(results, accessToken) {
                                 self.getAccessToken(results, accessToken);
@@ -290,7 +290,7 @@ var OAuthConsumer = {};
                   self.service.tokenSecret = OAuth.getParameter(results, "oauth_token_secret");
                   self.service.access_params = results;
   
-                  self.afterAuthorizeCallback(true);
+                  self.afterAuthorizeCallback(self.service);
                 }
             };
           
@@ -342,12 +342,12 @@ var OAuthConsumer = {};
             let targetURL = message.action + "?" + requestBody;
             this._log.debug("REQUEST: "+targetURL);
 
-            openOAuthLogin(targetURL,
+            OAuthConsumer.openDialog(targetURL,
                            null,
                            function(results, accessToken) {
                                 self.service.token = accessToken;
                                 self.service.access_params = results;
-                                self.afterAuthorizeCallback(true);
+                                self.afterAuthorizeCallback(self.service);
                             });
         },
         
@@ -382,11 +382,11 @@ var OAuthConsumer = {};
                         self.service.token = OAuth.getParameter(results, "access_token");
                         self.service.access_params = results;
 
-                        self.afterAuthorizeCallback(true);
+                        self.afterAuthorizeCallback(self.service);
                     } else {
                         self._log.error("Unable to access Facebook: error " + call.status + " while getting access token.");
                         dump(call.responseText);
-                        self.afterAuthorizeCallback(false);
+                        self.afterAuthorizeCallback(null);
                     }
                 }
             }
@@ -394,6 +394,32 @@ var OAuthConsumer = {};
         }
     }
     this._authorizers["2.0"] = OAuth2Handler;
-    
+
+    this.openDialog = function(loginUrl, requestData, afterAuthCallback) {
+        var accessToken = null;
+        var callbackFunc = function(token)
+        {
+            dump("got access token "+token+"\n");
+            accessToken = token;
+        };
+
+        window.openDialog("chrome://oauthorizer/content/loginPanel.xul",
+			  "Login/Authorization Panel",
+			  "chrome,centerscreen,modal,width=350,height=400",
+			  loginUrl, callbackFunc);
+        if (accessToken)
+        {
+            afterAuthCallback(requestData, accessToken);
+        }
+    }
+
+    this.authorize = function(providerName, key, secret, callback, params) {
+        var svc = OAuthConsumer.getProvider(providerName, key, secret);
+        if (params)
+            svc.requestParams = params;
+        var oAuth = OAuthConsumer.getAuthorizer(svc, callback);
+        oAuth.startAuthentication(); 
+    }
+
 }).call(OAuthConsumer);
 
