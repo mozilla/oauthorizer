@@ -2,12 +2,9 @@
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <?xml-stylesheet href="chrome://oauthorizer/skin/oauth.css" type="text/css"?>
 
-<window id="oauth_loginDialog" 
+<dialog id="oauth_loginDialog" 
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"    
-        xbuttons=""
-        xbuttonlabelcancel="Cancel"
-	xbuttonaccesskeycancel="n"
-        xondialogcancel="return closeWindow();"
+        buttons=","
         onload="loadLoginFrame()"
 	title="Login and Authorization"
 	width="800"
@@ -25,4 +22,4 @@
     </statusbarpanel>
     <statusbarpanel id="security-button" class="statusbarpanel-iconic"/>
   </statusbar>
-</window>
+</dialog>
