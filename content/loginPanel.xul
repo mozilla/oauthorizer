@@ -19,7 +19,10 @@
   <browser type="content" src="chrome://oauthorizer/content/authorize.xhtml" id="oauth_loginFrame" flex="1"/>
   <statusbar>
     <statusbarpanel id="security-display" crop="end" flex="1"/>
-    <statusbarpanel id="security-status" crop="end"/>
+    <statusbarpanel id="security-status" crop="end" collapsed="true"/>
+    <statusbarpanel class="statusbarpanel-progress" collapsed="true" id="statusbar-status">
+      <progressmeter class="progressmeter-statusbar" id="statusbar-icon" mode="normal" value="0"/>
+    </statusbarpanel>
     <statusbarpanel id="security-button" class="statusbarpanel-iconic"/>
   </statusbar>
 </window>
