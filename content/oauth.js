@@ -392,7 +392,11 @@ var OAuthConsumer = {};
                            null,
                            function(results, accessToken) {
                                 self.service.token = accessToken;
-                                self.service.accessParams = OAuth.getParameterMap(results);
+                                // we don't receive params, save the stuff
+                                // we need
+                                self.service.accessParams = {
+                                    'access_token': accessToken
+                                };
                                 // save into prefs
                                 OAuthConsumer._setAccess(self.service);
                                 self.afterAuthorizeCallback(self.service);
