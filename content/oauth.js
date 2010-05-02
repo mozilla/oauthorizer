@@ -38,18 +38,21 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 Components.utils.import("resource://oauthorizer/modules/oauth.js");
 Components.utils.import("resource://oauthorizer/modules/Log4Moz.js");
+Components.utils.import("resource://oauthorizer/modules/sha1.js");
 
 var OAuthConsumer = {};
 
 (function()
 {
+    var EXT_ID = "oauthorizer@mozillamessaging.com";
     var COMPLETION_URI = "http://oauthcallback.local/access.xhtml";
     this._providers = {
         // while some providers support POST, it seems all providers work
         // with GET, so use GET
         "yahoo": function(key, secret) {
             return {
-                name: "Yahoo!",
+                name: "yahoo",
+                displayName: "Yahoo!",
                 version: "1.0",
                 consumerKey   : key, 
                 consumerSecret: secret,
@@ -70,7 +73,8 @@ var OAuthConsumer = {};
         },
         "google": function(key, secret) {
             return {
-                name: "Google",
+                name: "google",
+                displayName: "Google",
                 version: "1.0",
                 consumerKey   : key, 
                 consumerSecret: secret,
@@ -91,7 +95,8 @@ var OAuthConsumer = {};
         },
         "twitter": function(key, secret) {
             return {
-                name: "Twitter",
+                name: "twitter",
+                displayName: "Twitter",
                 version: "1.0",
                 consumerKey   : key, 
                 consumerSecret: secret,
@@ -112,7 +117,8 @@ var OAuthConsumer = {};
         },
         "linkedin": function(key, secret) {
             return {
-                name: "LinkedIn",
+                name: "linkedin",
+                displayName: "LinkedIn",
                 version: "1.0",
                 consumerKey   : key, 
                 consumerSecret: secret,
@@ -133,7 +139,8 @@ var OAuthConsumer = {};
         },
         "plaxo": function(key, secret) {
             return {
-                name: "Plaxo",
+                name: "plaxo",
+                displayName: "Plaxo",
                 version: "1.0",
                 consumerKey   : key, 
                 consumerSecret: "", // plaxo doesn't use a secret
@@ -154,7 +161,8 @@ var OAuthConsumer = {};
         },
         "facebook": function(key, secret) {
             return {
-                name: "Facebook",
+                name: "facebook",
+                displayName: "Facebook",
                 version: "2.0",
                 consumerKey   : key, 
                 consumerSecret: secret,
@@ -183,6 +191,33 @@ var OAuthConsumer = {};
         return new this._authorizers[svc.version](svc, onCompleteCallback);
     }
     
+    this._makePrefKey = function(providerName, key, secret) {
+        return hex_sha1(providerName+":"+key+":"+secret);
+    }
+    this.resetAccess = function(providerName, key, secret) {
+        let pref = this._makePrefKey(providerName, key, secret);
+        Application.extensions.get(EXT_ID).prefs.setValue(pref, "");
+    }
+    this._setAccess = function(svc) {
+        let key = this._makePrefKey(svc.name, svc.consumerKey, svc.consumerSecret);
+        Application.extensions.get(EXT_ID).prefs.setValue(key, JSON.stringify(svc.accessParams));
+    }
+    this._getAccess = function(svc) {
+        let key = this._makePrefKey(svc.name, svc.consumerKey, svc.consumerSecret);
+        let params = Application.extensions.get(EXT_ID).prefs.getValue(key, null);
+        if (!params)
+            return false;
+
+        svc.accessParams = JSON.parse(params);
+        if (svc.version == "1.0") {
+            svc.token = svc.accessParams["oauth_token"];
+            svc.tokenSecret = svc.accessParams["oauth_token_secret"];
+        }
+        else
+            svc.token = svc.accessParams["access_token"];
+        return svc.token ? true : false;
+    }
+    
     function OAuth1Handler(oauthSvc, afterAuthorizeCallback) {
         this._log = SimpleLogger.getLogger("oath.authorizer", "oauth.txt", true, true, false);
         this.service = oauthSvc
@@ -192,7 +227,10 @@ var OAuthConsumer = {};
         //starts the authentication process	
         startAuthentication: function()
         {
-            this.getRequestToken();
+            if (OAuthConsumer._getAccess(this.service))
+                this.afterAuthorizeCallback(this.service);
+            else
+                this.getRequestToken();
         },
 
         getRequestToken: function() {
@@ -288,10 +326,13 @@ var OAuthConsumer = {};
                     
                   results = OAuth.decodeForm(call.responseText);
                   
-                  self.service.token = OAuth.getParameter(results, "oauth_token");
-                  self.service.tokenSecret = OAuth.getParameter(results, "oauth_token_secret");
-                  self.service.access_params = results;
-  
+                  self.service.accessParams = OAuth.getParameterMap(results);
+                  self.service.token = self.service.accessParams["oauth_token"];
+                  self.service.tokenSecret = self.service.accessParams["oauth_token_secret"];
+
+                  // save into prefs
+                  OAuthConsumer._setAccess(self.service);
+
                   self.afterAuthorizeCallback(self.service);
                 }
             };
@@ -326,7 +367,10 @@ var OAuthConsumer = {};
     OAuth2Handler.prototype = {
         startAuthentication: function()
         {
-            this.getUserAuthorization();
+            if (OAuthConsumer._getAccess(this.service))
+                this.afterAuthorizeCallback(this.service);
+            else
+                this.getUserAuthorization();
         },
         getUserAuthorization: function() {
             let self = this;
@@ -348,7 +392,9 @@ var OAuthConsumer = {};
                            null,
                            function(results, accessToken) {
                                 self.service.token = accessToken;
-                                self.service.access_params = results;
+                                self.service.accessParams = OAuth.getParameterMap(results);
+                                // save into prefs
+                                OAuthConsumer._setAccess(self.service);
                                 self.afterAuthorizeCallback(self.service);
                             });
         },
@@ -381,8 +427,11 @@ var OAuthConsumer = {};
                           
                         results = OAuth.decodeForm(call.responseText);
                         
-                        self.service.token = OAuth.getParameter(results, "access_token");
-                        self.service.access_params = results;
+                        self.service.accessParams = OAuth.getParameterMap(results);
+                        self.service.token = self.service.accessParams["access_token"];
+
+                        // save into prefs
+                        OAuthConsumer._setAccess(self.service);
 
                         self.afterAuthorizeCallback(self.service);
                     } else {
@@ -415,6 +464,17 @@ var OAuthConsumer = {};
         }
     }
 
+    /**
+     * The one and only API you should use.  Call authorize with your
+     * key and secret, your callback will receive a service object that
+     * has 3 important members, token, tokenSecret and accessParams.
+     * accessParams is an object that contains all the parameters returned
+     * during the access request phase of the OAuth protocol.  If you need
+     * more than the token or secret (e.g. xoauth_yahoo_guid), look in
+     * accessParams.
+     *
+     * supported providers are at the top of this file.
+     */
     this.authorize = function(providerName, key, secret, callback, params) {
         var svc = OAuthConsumer.getProvider(providerName, key, secret);
         if (params)

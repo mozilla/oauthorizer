@@ -55,7 +55,7 @@
     function testProvider(provider) {
 	let [key, secret, params] = oauthdata[provider];
         function testCallback(svc) {
-            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret);
+            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret+"\n");
 	    document.getElementById("accessToken").setAttribute('value', svc.token);
 	    document.getElementById("secret").setAttribute('value', svc.tokenSecret);
         }
@@ -68,17 +68,58 @@
 			  "chrome,centerscreen,modal,dialog=no",
 			  "", function(){});
     }
+    
+    function resetProvider(provider) {
+	let [key, secret, params] = oauthdata[provider];
+	OAuthConsumer.resetAccess(provider, key, secret);
+    }
   ]]>
   </script>
   
   <vbox flex="1">
-	  <button label="Test Yahoo Auth" oncommand="testProvider('yahoo');"/>
-	  <button label="Test Google Auth" oncommand="testProvider('google');"/>
-	  <button label="Test Twitter Auth" oncommand="testProvider('twitter');"/>
-	  <button label="Test LinkedIn Auth" oncommand="testProvider('linkedin');"/>
-	  <button label="Test Plaxo Auth" oncommand="testProvider('plaxo');"/>
-	  <button label="Test Facebook Auth" oncommand="testProvider('facebook');"/>
-	  <button label="Test Blank Dialog" oncommand="testDialog();"/>
+    <grid>
+	<columns>
+	    <column/>
+	    <column/>
+	    <column/>
+	</columns>
+	<rows>
+	    <row>
+		<label value="Yahoo"/>
+		<button label="Authorize" oncommand="testProvider('yahoo');"/>
+		<button label="Reset" oncommand="resetProvider('yahoo')"/>
+	    </row>
+	    <row>
+		<label value="Google"/>
+		<button label="Authorize" oncommand="testProvider('google');"/>
+		<button label="Reset" oncommand="resetProvider('google')"/>
+	    </row>
+	    <row>
+		<label value="Twitter"/>
+		<button label="Authorize" oncommand="testProvider('twitter');"/>
+		<button label="Reset" oncommand="resetProvider('twitter')"/>
+	    </row>
+	    <row>
+		<label value="LinkedIn"/>
+		<button label="Authorize" oncommand="testProvider('linkedin');"/>
+		<button label="Reset" oncommand="resetProvider('linkedin')"/>
+	    </row>
+	    <row>
+		<label value="Plaxo"/>
+		<button label="Authorize" oncommand="testProvider('plaxo');"/>
+		<button label="Reset" oncommand="resetProvider('plaxo')"/>
+	    </row>
+	    <row>
+		<label value="Facebook"/>
+		<button label="Authorize" oncommand="testProvider('facebook');"/>
+		<button label="Reset" oncommand="resetProvider('facebook')"/>
+	    </row>
+	    <row>
+		<label value="None"/>
+	        <button label="Auth Dialog" oncommand="testDialog();"/>
+	    </row>
+	</rows>
+    </grid>
   </vbox>
   <vbox>
     <grid>
