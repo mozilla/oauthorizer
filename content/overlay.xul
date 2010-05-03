@@ -3,17 +3,26 @@
 
 <overlay id="oauthorizer-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    <script src="chrome://oauthorizer/content/oauth.js" type="application/x-javascript"/>
+
     <script type="application/x-javascript">
     <![CDATA[
-    function testAuthDialog() {
+    function test_OAuthDialog() {
         window.open("chrome://oauthorizer/content/tester.xul", "test_oauth", "chrome,centerscreen,width=350,height=400");
     }
     ]]>
     </script>
     
-    <!-- for testing -->
+    <!-- thunderbird -->
     <menupopup id="taskPopup">
         <menuitem id="test_oauth_login" label="Test OAuth login"
-                  oncommand='testAuthDialog()'/>
+                  oncommand='test_OAuthDialog()'/>
     </menupopup>
+
+    <!-- firefox -->
+    <menupopup id="menu_ToolsPopup">
+        <menuitem id="fx_test_oauth_login" label="Test OAuth login"
+                  oncommand='test_OAuthDialog()'/>
+    </menupopup>
+
 </overlay>

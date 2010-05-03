@@ -10,6 +10,34 @@
     <em:description>An addon that enables easy use of oauth for other addons</em:description>
     <!--<em:aboutURL>chrome://maillistfilter/content/about.xul</em:aboutURL>-->
     <!--<em:optionsURL>chrome://maillistfilter/content/options.xul</em:optionsURL>-->
+    <!-- Firefox -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+        <em:minVersion>3.5</em:minVersion>
+        <em:maxVersion>3.7a5pre</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
+    <!-- Fennec -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{a23983c0-fd0e-11dc-95ff-0800200c9a66}</em:id>
+        <em:minVersion>1.0b6pre</em:minVersion>
+        <em:maxVersion>1.1.*</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
+    <!-- SeaMonkey -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}</em:id>
+        <em:minVersion>2.0a3</em:minVersion>
+        <em:maxVersion>2.1a1pre</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
+    <!-- Thunderbird -->
     <em:targetApplication>
       <Description>
         <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id> <!-- Thunderbird -->
