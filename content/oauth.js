@@ -459,7 +459,7 @@ var OAuthConsumer = {};
         };
 
         window.openDialog("chrome://oauthorizer/content/loginPanel.xul",
-			  "Login and Authorization",
+			  "oauth_authorization_dialog",
 			  "chrome,centerscreen,modal,dialog=no",
 			  loginUrl, callbackFunc);
         if (accessToken)
