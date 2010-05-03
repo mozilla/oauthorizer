@@ -13,6 +13,17 @@ function doneAuthorizing(oauth_verifier)
   window.close();
 }
 
+function openURL(url) {
+  let win = window.opener;
+  while (win) {
+    if (win['openURL']) {
+      win.openURL(url);
+      break;
+    }
+    win = win.opener;
+  }
+}
+
 var reporterListener = {
   _isBusy: false,
   get statusMeter() {
@@ -45,6 +56,20 @@ var reporterListener = {
                      /*in nsresult*/ aStatus) {
     if (aStateFlags & wpl.STATE_START &&
         aStateFlags & wpl.STATE_IS_NETWORK) {
+      /*
+       * As much as I would like to limit on some base url, oauth services
+       * do not stick to a single base url all the time, e.g. login with
+       * google
+       *
+      let svc = window.arguments[2];
+      dump("requesting: "+aRequest.name+"\n");
+      if (aRequest.name.indexOf(svc.oauthBase) != 0 &&
+          aRequest.name.indexOf('http://oauthcallback.local/') != 0) {
+        // cancel the request, and open in a new tab
+        openURL(aRequest.name);
+        window.close();
+      }
+      */
       this.statusMeter.value = 0;
       this.statusMeter.parentNode.collapsed = false;
       this.securityLabel.collapsed = true;
@@ -141,12 +166,24 @@ var reporterListener = {
 
 function loadLoginFrame()
 {
+  let bundle = document.getElementById("loginBundle");
+  var name, desc;
+  let svc = window.arguments[2];
+  if (svc && svc.ext) {
+    desc = bundle.getFormattedString('extension.txt',[svc.ext.name, svc.name]);
+  } else {
+    name = Application.name;
+    desc = bundle.getFormattedString('application.txt',[name, name, svc?svc.displayName:"the interwebs"]);
+  }
+  let node = document.createTextNode(desc);
+  document.getElementById('message').appendChild(node);
+
   var browser = document.getElementById("oauth_loginFrame");
   browser.addProgressListener(reporterListener, wpl.NOTIFY_ALL);
   var url = window.arguments[0];
   if (url != "") {
-    window.setTimeout(function(url) {
-          browser.setAttribute("src", url);
-    }, 2000, url);
+    browser.setAttribute("src", url);
   }
+  var app = window.arguments[2].app;
+  
 }

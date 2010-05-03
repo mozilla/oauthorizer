@@ -1,5 +1,6 @@
 content   oauthorizer                 content/
 skin      oauthorizer class/1.0       skin/
+locale    oauthorizer en-US           locale/en-US/
 
 overlay	chrome://messenger/content/messenger.xul   chrome://oauthorizer/content/overlay.xul
 resource oauthorizer ./

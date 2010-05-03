@@ -6,7 +6,7 @@
     <script type="application/x-javascript">
     <![CDATA[
     function testAuthDialog() {
-        window.openDialog("chrome://oauthorizer/content/tester.xul", "Test Auth", "chrome,centerscreen,modal,width=350,height=400");
+        window.open("chrome://oauthorizer/content/tester.xul", "test_oauth", "chrome,centerscreen,width=350,height=400");
     }
     ]]>
     </script>

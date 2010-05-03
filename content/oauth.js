@@ -61,6 +61,7 @@ var OAuthConsumer = {};
                 accessParams: {},  // results from request access
                 requestParams: {}, // results from request token
                 requestMethod: "GET",
+                oauthBase: "https://api.login.yahoo.com/oauth/",
                 serviceProvider:
                 {
                   signatureMethod     : "HMAC-SHA1",
@@ -83,6 +84,7 @@ var OAuthConsumer = {};
                 accessParams: {},
                 requestParams: {},
                 requestMethod: "GET",
+                oauthBase: "https://www.google.com/accounts/",
                 serviceProvider:
                 {
                   signatureMethod     : "HMAC-SHA1",
@@ -105,6 +107,7 @@ var OAuthConsumer = {};
                 accessParams: {},
                 requestParams: {},
                 requestMethod: "GET",
+                oauthBase: "https://twitter.com/oauth/",
                 serviceProvider:
                 {
                   signatureMethod     : "HMAC-SHA1",
@@ -127,12 +130,13 @@ var OAuthConsumer = {};
                 accessParams: {},
                 requestParams: {},
                 requestMethod: "GET",
+                oauthBase: "https://www.linkedin.com/uas/oauth/",
                 serviceProvider:
                 {
                   signatureMethod     : "HMAC-SHA1",
-                  requestTokenURL     : "https://api.linkedin.com/uas/oauth/requestToken",
-                  userAuthorizationURL: "https://api.linkedin.com/uas/oauth/authorize",
-                  accessTokenURL      : "https://api.linkedin.com/uas/oauth/accessToken", 
+                  requestTokenURL     : "https://www.linkedin.com/uas/oauth/requestToken",
+                  userAuthorizationURL: "https://www.linkedin.com/uas/oauth/authorize",
+                  accessTokenURL      : "https://www.linkedin.com/uas/oauth/accessToken", 
                   echoURL             : ""
                 }
             }
@@ -149,6 +153,7 @@ var OAuthConsumer = {};
                 accessParams: {},
                 requestParams: {},
                 requestMethod: "GET",
+                oauthBase: "https://www.plaxo.com/oauth/",
                 serviceProvider:
                 {
                   signatureMethod     : "PLAINTEXT",
@@ -170,6 +175,7 @@ var OAuthConsumer = {};
                 tokenSecret: null,
                 accessParams: {},
                 requestParams: {},
+                oauthBase: "https://graph.facebook.com/oauth/",
                 serviceProvider:
                 {
                   signatureMethod     : "HMAC-SHA1",
@@ -287,6 +293,7 @@ var OAuthConsumer = {};
             let targetURL = this.service.serviceProvider.userAuthorizationURL + "?oauth_token=" + token;
             OAuthConsumer.openDialog(targetURL,
                            results,
+                           self.service,
                            function(results, accessToken) {
                                 self.getAccessToken(results, accessToken);
                             });
@@ -390,6 +397,7 @@ var OAuthConsumer = {};
 
             OAuthConsumer.openDialog(targetURL,
                            null,
+                           self.service,
                            function(results, accessToken) {
                                 self.service.token = accessToken;
                                 // we don't receive params, save the stuff
@@ -450,22 +458,18 @@ var OAuthConsumer = {};
     }
     this._authorizers["2.0"] = OAuth2Handler;
 
-    this.openDialog = function(loginUrl, requestData, afterAuthCallback) {
-        var accessToken = null;
+    this.openDialog = function(loginUrl, requestData, svc, afterAuthCallback) {
+        var win = window;
         var callbackFunc = function(token)
         {
             dump("got access token "+token+"\n");
-            accessToken = token;
+            win.setTimeout(afterAuthCallback, 0, requestData, token);
         };
 
         window.openDialog("chrome://oauthorizer/content/loginPanel.xul",
 			  "oauth_authorization_dialog",
 			  "chrome,centerscreen,modal,dialog=no",
-			  loginUrl, callbackFunc);
-        if (accessToken)
-        {
-            afterAuthCallback(requestData, accessToken);
-        }
+			  loginUrl, callbackFunc, svc);
     }
 
     /**
@@ -478,11 +482,20 @@ var OAuthConsumer = {};
      * accessParams.
      *
      * supported providers are at the top of this file.
+     *
+     * @param providerName string      Name of provider
+     * @param key          string      api or oauth key from provider
+     * @param secret       string      secret key from provider
+     * @param callback     function
+     * @param params       object      extra parmams, such as scope
+     * @param extension    object      extIExtension instance, defaults to Application
      */
-    this.authorize = function(providerName, key, secret, callback, params) {
+    this.authorize = function(providerName, key, secret, callback, params, extension) {
         var svc = OAuthConsumer.getProvider(providerName, key, secret);
         if (params)
             svc.requestParams = params;
+        if (typeof(extension) != 'undefined')
+            svc.ext = extension;
         var oAuth = OAuthConsumer.getAuthorizer(svc, callback);
         oAuth.startAuthentication(); 
     }

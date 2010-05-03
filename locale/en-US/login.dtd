@@ -1,0 +1,3 @@
+<!ENTITY headerImage.src  "chrome://messenger/skin/icons/identity.png">
+<!ENTITY header.txt       "&brandShortName;, or a &brandShortName; Addon, is requesting access from a website on your behalf.">
+
