@@ -2,7 +2,7 @@
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <?xml-stylesheet href="chrome://oauthorizer/skin/oauth.css" type="text/css"?>
 
-<dialog id="oauth_loginDialog" 
+<window id="oauth_loginDialog" 
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"    
         buttons=","
         onload="loadLoginFrame()"
@@ -12,7 +12,12 @@
 	orient="vertical">
 
   <script type="application/x-javascript" src="chrome://oauthorizer/content/loginPanel.js"/>
-  
+
+  <keyset id="mainKeyset">
+    <key id="key_close"   key="w" modifiers="accel" oncommand="window.close()"/>
+    <key id="key_close2"  keycode="VK_ESCAPE" oncommand="window.close()"/>
+  </keyset>
+
   <browser type="content" src="chrome://oauthorizer/content/authorize.xhtml" id="oauth_loginFrame" flex="1"/>
   <statusbar>
     <statusbarpanel id="security-display" crop="end" flex="1"/>
@@ -22,4 +27,4 @@
     </statusbarpanel>
     <statusbarpanel id="security-button" class="statusbarpanel-iconic"/>
   </statusbar>
-</dialog>
+</window>
