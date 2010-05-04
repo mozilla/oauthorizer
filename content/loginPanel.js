@@ -177,7 +177,7 @@ function loadLoginFrame()
   let svc = window.arguments[2];
   if (svc && svc.extensionID) {
     let ext = Application.extensions.get(svc.extensionID);
-    desc = bundle.getFormattedString('extension.txt',[ext.name, svc.name]);
+    desc = bundle.getFormattedString('extension.txt',[ext.name, svc.displayName]);
   } else {
     name = Application.name;
     desc = bundle.getFormattedString('application.txt',[name, name, svc?svc.displayName:"the interwebs"]);
