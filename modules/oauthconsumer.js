@@ -259,24 +259,7 @@ var OAuthConsumer = {};
                             });
         },
 
-        getAccessToken: function(requestTokenResults, accessToken)
-        {
-            try {
-            this._log.debug("Getting "+this.service.name+
-                            " access token: "+accessToken+" requestToken is " +
-                            JSON.stringify(requestTokenResults));
-          
-            this.service.tokenSecret = OAuth.getParameter(requestTokenResults, "oauth_token_secret");
-            this._log.debug("   tokenSecret: "+this.service.tokenSecret)
-            let message = {
-              method: this.service.requestMethod, 
-              action: this.service.serviceProvider.accessTokenURL,
-              parameters: {
-                oauth_signature_method: "HMAC-SHA1",
-                oauth_verifier: OAuth.decodePercent(accessToken),
-                oauth_token   : OAuth.getParameter(requestTokenResults, "oauth_token")
-              }
-            };
+        _completeAccessRequest: function(message) {
             OAuth.completeRequest(message, this.service);
             var requestBody = OAuth.formEncode(message.parameters);
           
@@ -318,9 +301,48 @@ var OAuthConsumer = {};
                 call.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
                 call.send(requestBody);
             }
+        },
+
+        getAccessToken: function(requestTokenResults, accessToken)
+        {
+            try {
+            this._log.debug("getAccessToken "+this.service.name+
+                            " access token: "+accessToken+" requestToken is " +
+                            JSON.stringify(requestTokenResults));
+          
+            this.service.tokenSecret = OAuth.getParameter(requestTokenResults, "oauth_token_secret");
+            this._log.debug("   tokenSecret: "+this.service.tokenSecret)
+            let message = {
+              method: this.service.requestMethod, 
+              action: this.service.serviceProvider.accessTokenURL,
+              parameters: {
+                oauth_signature_method: "HMAC-SHA1",
+                oauth_verifier: OAuth.decodePercent(accessToken),
+                oauth_token   : OAuth.getParameter(requestTokenResults, "oauth_token")
+              }
+            };
+            this._completeAccessRequest(message);
             } catch(e) {
                 this._log.error(e);
             }
+        },
+        
+        reauthorize: function() {
+            let session = this.service.accessParams['oauth_session_handle'];
+            this._log.debug("reauthorize "+this.service.name+
+                            " access token: "+this.service.token+
+                            " oauth_session_handle: " +session);
+          
+            let message = {
+              method: this.service.requestMethod, 
+              action: this.service.serviceProvider.accessTokenURL,
+              parameters: {
+                oauth_signature_method: "HMAC-SHA1",
+                oauth_token   : this.service.token,
+                oauth_session_handle : session
+              }
+            };
+            this._completeAccessRequest(message);
         }
 
     };
