@@ -9,11 +9,11 @@
 	width="700"
 	height="600"
 	style="margin:5px 5px 5px 5px; max-width: 700px;">
-    <script src="chrome://oauthorizer/content/oauth.js" type="application/x-javascript"/>
 
   <script type="application/x-javascript">
   <![CDATA[
     // this is an example of using oauthorizer
+    Components.utils.import("resource://oauthorizer/modules/oauthconsumer.js");
     
     // every addon or application should provide its own keys, 
     // provider = [key, secret, params]
@@ -21,7 +21,8 @@
 	'yahoo': [
 	    "dj0yJmk9OXRIeE1Bbk9qeUF5JmQ9WVdrOU9YRkhNWGxMTjJzbWNHbzlPVFF6TURRNE5EWTEmcz1jb25zdW1lcnNlY3JldCZ4PWI3",
 	    "49a19e581d1920b49fd4977e744f1bd16a22ad2c",
-	    null
+	    null,
+	    "http://oauthcallback.local/access.xhtml"
 	],
 	'google': [
 	    "anonymous",
@@ -29,37 +30,42 @@
 	    {
 	    'xoauth_displayname': "Mozilla Authorizer",
 	    'scope': 'http://www.google.com/m8/feeds' // contacts
-	    }
+	    },
+	    "http://oauthcallback.local/access.xhtml"
 	],
 	'twitter': [
 	    "lppkBgcpuhe2TKZIRVoQg",
 	    "M6hwPkgEyqxkDz583LFYAv5dTVg1AsKIXHFPiIFhsM",
-	    null
+	    null,
+	    "http://oauthcallback.local/access.xhtml"
 	],
 	'linkedin': [
 	    "Ro8OWZrx0j8HaZPHyRxB9IEx8ZPjSlWksYW4PcPXkyFBWNZEZmQ-sLYShtpMk1g7",
 	    "pmpd9ZHZu2tDHiwDn3rqiBuxLluzltrSbFjIjZbebwxQyHzA09VxT-cXrtEJxZ-t",
-	    null
+	    null,
+	    "http://oauthcallback.local/access.xhtml"
 	],
-	'plaxo': ['anonymous', '', null],
+	'plaxo': ['anonymous', '', null,
+		  "http://thunderbird.local/access.xhtml"],
 	'facebook': [
-	    "115822435112164",
-	    "11f38b9baed44a8c3c7eb44ed47b8029",
+	    "110796232295543",
+	    "19fd15e594991fd88e05b3534403e5c8",
 	    {
 	    'scope': 'friends_birthday,friends_online_presence,friends_photos,friends_website',
 	    'type': "user_agent",
 	    'display': "popup"
-	    }
+	    },
+	    "http://www.oauthcallback.local/postauthorize"
 	]
     }
     function testProvider(provider) {
-	let [key, secret, params] = oauthdata[provider];
+	let [key, secret, params, completionURI] = oauthdata[provider];
         function testCallback(svc) {
             dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret+"\n");
 	    document.getElementById("accessToken").setAttribute('value', svc.token);
 	    document.getElementById("secret").setAttribute('value', svc.tokenSecret);
         }
-	OAuthConsumer.authorize(provider, key, secret, testCallback, params);
+	OAuthConsumer.authorize(provider, key, secret, completionURI, testCallback, params);
     }
 
     function testDialog() {
@@ -70,7 +76,7 @@
     }
     
     function resetProvider(provider) {
-	let [key, secret, params] = oauthdata[provider];
+	let [key, secret, params, completionURI] = oauthdata[provider];
 	OAuthConsumer.resetAccess(provider, key, secret);
     }
   ]]>

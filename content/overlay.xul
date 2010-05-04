@@ -3,7 +3,6 @@
 
 <overlay id="oauthorizer-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-    <script src="chrome://oauthorizer/content/oauth.js" type="application/x-javascript"/>
 
     <script type="application/x-javascript">
     <![CDATA[

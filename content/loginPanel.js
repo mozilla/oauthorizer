@@ -99,7 +99,13 @@ var reporterListener = {
     // XXX this needs to be cleaned up to handle differences better, the
     // callback url should be configurable as well
     this.securityDisplay.setAttribute('label', aLocation.host);
-    if (aLocation.host.indexOf('oauthcallback.local') >= 0) {
+    var requestURI = aLocation.spec.split('?');
+    //dump("change: ["+aLocation.spec+"]\n");
+    //dump("      : ["+requestURI[0]+"] "+typeof(requestURI[0])+"\n");
+    //dump("      : ["+requestURI[1]+"] "+typeof(requestURI[0])+"\n");
+    //dump("need: ["+window.arguments[2].completionURI+"] "+typeof(window.arguments[2].completionURI)+"\n");
+    //dump(" got? "+aLocation.spec.indexOf(window.arguments[2].completionURI)+"\n");
+    if (aLocation.spec.indexOf(window.arguments[2].completionURI) == 0) {
       // OAuth 1.0
       var oauth_verifier = /oauth_verifier=([^&]*)/gi.exec(aLocation.spec);
       if (oauth_verifier) {
@@ -179,7 +185,7 @@ function loadLoginFrame()
   document.getElementById('message').appendChild(node);
 
   var browser = document.getElementById("oauth_loginFrame");
-  browser.addProgressListener(reporterListener, wpl.NOTIFY_ALL);
+  browser.addProgressListener(reporterListener, Components.interfaces.nsIWebProgress.NOTIFY_ALL);
   var url = window.arguments[0];
   if (url != "") {
     browser.setAttribute("src", url);

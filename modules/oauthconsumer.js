@@ -33,6 +33,7 @@
 * the terms of any one of the MPL, the GPL or the LGPL.
 *
 * ***** END LICENSE BLOCK ***** */
+let EXPORTED_SYMBOLS = ["OAuthConsumer"];
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -45,151 +46,100 @@ var OAuthConsumer = {};
 (function()
 {
     var EXT_ID = "oauthorizer@mozillamessaging.com";
-    var COMPLETION_URI = "http://oauthcallback.local/access.xhtml";
+    
+    function makeProvider(name, displayName, key, secret, completionURI, calls) {
+        return {
+            name: name,
+            displayName: displayName,
+            version: "1.0",
+            consumerKey   : key, 
+            consumerSecret: secret,
+            token: null,       // oauth_token
+            tokenSecret: null, // oauth_token_secret
+            accessParams: {},  // results from request access
+            requestParams: {}, // results from request token
+            requestMethod: "GET",
+            oauthBase: null,
+            completionURI: completionURI,
+            serviceProvider: calls
+        };
+    }
+
     this._providers = {
         // while some providers support POST, it seems all providers work
         // with GET, so use GET
-        "yahoo": function(key, secret) {
-            return {
-                name: "yahoo",
-                displayName: "Yahoo!",
-                version: "1.0",
-                consumerKey   : key, 
-                consumerSecret: secret,
-                token: null,       // oauth_token
-                tokenSecret: null, // oauth_token_secret
-                accessParams: {},  // results from request access
-                requestParams: {}, // results from request token
-                requestMethod: "GET",
-                oauthBase: "https://api.login.yahoo.com/oauth/",
-                serviceProvider:
-                {
+        "yahoo": function(key, secret, completionURI) {
+            let calls = {
                   signatureMethod     : "HMAC-SHA1",
                   requestTokenURL     : "https://api.login.yahoo.com/oauth/v2/get_request_token",
                   userAuthorizationURL: "https://api.login.yahoo.com/oauth/v2/request_auth",
-                  accessTokenURL      : "https://api.login.yahoo.com/oauth/v2/get_token", 
-                  echoURL             : ""
-                }
-            }
+                  accessTokenURL      : "https://api.login.yahoo.com/oauth/v2/get_token"
+                };
+            return makeProvider('yahoo', 'Yahoo!',
+                                     key, secret,
+                                     completionURI, calls);
         },
-        "google": function(key, secret) {
-            return {
-                name: "google",
-                displayName: "Google",
-                version: "1.0",
-                consumerKey   : key, 
-                consumerSecret: secret,
-                token: null,
-                tokenSecret: null,
-                accessParams: {},
-                requestParams: {},
-                requestMethod: "GET",
-                oauthBase: "https://www.google.com/accounts/",
-                serviceProvider:
-                {
+        "google": function(key, secret, completionURI) {
+            let calls = {
                   signatureMethod     : "HMAC-SHA1",
                   requestTokenURL     : "https://www.google.com/accounts/OAuthGetRequestToken",
                   userAuthorizationURL: "https://www.google.com/accounts/OAuthAuthorizeToken",
-                  accessTokenURL      : "https://www.google.com/accounts/OAuthGetAccessToken", 
-                  echoURL             : ""
-                }
-            }
+                  accessTokenURL      : "https://www.google.com/accounts/OAuthGetAccessToken"
+                };
+            return makeProvider('google', 'Google',
+                                     key, secret,
+                                     completionURI, calls);
         },
-        "twitter": function(key, secret) {
-            return {
-                name: "twitter",
-                displayName: "Twitter",
-                version: "1.0",
-                consumerKey   : key, 
-                consumerSecret: secret,
-                token: null,
-                tokenSecret: null,
-                accessParams: {},
-                requestParams: {},
-                requestMethod: "GET",
-                oauthBase: "https://twitter.com/oauth/",
-                serviceProvider:
-                {
+        "twitter": function(key, secret, completionURI) {
+            let calls = {
                   signatureMethod     : "HMAC-SHA1",
                   requestTokenURL     : "https://twitter.com/oauth/request_token",
                   userAuthorizationURL: "https://twitter.com/oauth/authorize",
-                  accessTokenURL      : "https://twitter.com/oauth/access_token", 
-                  echoURL             : ""
-                }
-            }
+                  accessTokenURL      : "https://twitter.com/oauth/access_token"
+                };
+            return makeProvider('twitter', 'Twitter',
+                                     key, secret,
+                                     completionURI, calls);
         },
-        "linkedin": function(key, secret) {
-            return {
-                name: "linkedin",
-                displayName: "LinkedIn",
-                version: "1.0",
-                consumerKey   : key, 
-                consumerSecret: secret,
-                token: null,
-                tokenSecret: null,
-                accessParams: {},
-                requestParams: {},
-                requestMethod: "GET",
-                oauthBase: "https://www.linkedin.com/uas/oauth/",
-                serviceProvider:
-                {
+        "linkedin": function(key, secret, completionURI) {
+            let calls = {
                   signatureMethod     : "HMAC-SHA1",
                   requestTokenURL     : "https://www.linkedin.com/uas/oauth/requestToken",
                   userAuthorizationURL: "https://www.linkedin.com/uas/oauth/authorize",
-                  accessTokenURL      : "https://www.linkedin.com/uas/oauth/accessToken", 
-                  echoURL             : ""
-                }
-            }
+                  accessTokenURL      : "https://www.linkedin.com/uas/oauth/accessToken"
+                };
+            return makeProvider('linkedin', 'LinkedIn',
+                                     key, secret,
+                                     completionURI, calls);
         },
-        "plaxo": function(key, secret) {
-            return {
-                name: "plaxo",
-                displayName: "Plaxo",
-                version: "1.0",
-                consumerKey   : key, 
-                consumerSecret: "", // plaxo doesn't use a secret
-                token: null,
-                tokenSecret: null,
-                accessParams: {},
-                requestParams: {},
-                requestMethod: "GET",
-                oauthBase: "https://www.plaxo.com/oauth/",
-                serviceProvider:
-                {
+        "plaxo": function(key, secret, completionURI) {
+            let calls = {
                   signatureMethod     : "PLAINTEXT",
                   requestTokenURL     : "https://www.plaxo.com/oauth/request",
                   userAuthorizationURL: "https://www.plaxo.com/oauth/authorize",
-                  accessTokenURL      : "https://www.plaxo.com/oauth/activate", 
-                  echoURL             : ""
-                }
-            }
+                  accessTokenURL      : "https://www.plaxo.com/oauth/activate"
+                };
+            return makeProvider('plaxo', 'Plaxo',
+                                     key, secret,
+                                     completionURI, calls);
         },
-        "facebook": function(key, secret) {
-            return {
-                name: "facebook",
-                displayName: "Facebook",
-                version: "2.0",
-                consumerKey   : key, 
-                consumerSecret: secret,
-                token: null,        // access_token
-                tokenSecret: null,
-                accessParams: {},
-                requestParams: {},
-                oauthBase: "https://graph.facebook.com/oauth/",
-                serviceProvider:
-                {
+        "facebook": function(key, secret, completionURI) {
+            let calls = {
                   signatureMethod     : "HMAC-SHA1",
                   userAuthorizationURL: "https://graph.facebook.com/oauth/authorize",
-                  accessTokenURL      : "https://graph.facebook.com/oauth/access_token", 
-                  echoURL             : ""
-                }
-            }
+                  accessTokenURL      : "https://graph.facebook.com/oauth/access_token"
+                };
+            let p = makeProvider('facebook', 'Facebook',
+                                     key, secret,
+                                     completionURI, calls);
+            p.version = "2.0";
+            return p;
         }
         
     };
     
-    this.getProvider = function(providerName, key, secret) {
-        return this._providers[providerName](key, secret);
+    this.getProvider = function(providerName, key, secret, completionURI) {
+        return this._providers[providerName](key, secret, completionURI);
     }
     
     this._authorizers = {};
@@ -197,23 +147,34 @@ var OAuthConsumer = {};
         return new this._authorizers[svc.version](svc, onCompleteCallback);
     }
     
+    this.__defineGetter__('prefs', function() {
+        delete this.prefs;
+        let prefService = Components.classes["@mozilla.org/preferences-service;1"].
+                                     getService(Components.interfaces.nsIPrefService);
+        return this.prefs = prefService.getBranch("extensions."+EXT_ID+".");
+    });
+    
     this._makePrefKey = function(providerName, key, secret) {
         return hex_sha1(providerName+":"+key+":"+secret);
     }
     this.resetAccess = function(providerName, key, secret) {
         let pref = this._makePrefKey(providerName, key, secret);
-        Application.extensions.get(EXT_ID).prefs.setValue(pref, "");
+        this.prefs.setCharPref(pref, "");
     }
     this._setAccess = function(svc) {
         let key = this._makePrefKey(svc.name, svc.consumerKey, svc.consumerSecret);
-        Application.extensions.get(EXT_ID).prefs.setValue(key, JSON.stringify(svc.accessParams));
+        this.prefs.setCharPref(key, JSON.stringify(svc.accessParams));
     }
-    this._getAccess = function(svc) {
+    this.getAccess = function(svc) {
         let key = this._makePrefKey(svc.name, svc.consumerKey, svc.consumerSecret);
-        let params = Application.extensions.get(EXT_ID).prefs.getValue(key, null);
+        var params = null;
+        try {
+            params = this.prefs.getCharPref(key, null);
+        } catch(e) {
+            return false;
+        }
         if (!params)
             return false;
-
         svc.accessParams = JSON.parse(params);
         if (svc.version == "1.0") {
             svc.token = svc.accessParams["oauth_token"];
@@ -224,16 +185,16 @@ var OAuthConsumer = {};
         return svc.token ? true : false;
     }
     
-    function OAuth1Handler(oauthSvc, afterAuthorizeCallback) {
+    function OAuth1Handler(provider, afterAuthorizeCallback) {
         this._log = SimpleLogger.getLogger("oath.authorizer", "oauth.txt", true, true, false);
-        this.service = oauthSvc
+        this.service = provider;
         this.afterAuthorizeCallback = afterAuthorizeCallback;
     }
     OAuth1Handler.prototype = {
         //starts the authentication process	
         startAuthentication: function()
         {
-            if (OAuthConsumer._getAccess(this.service))
+            if (OAuthConsumer.getAccess(this.service))
                 this.afterAuthorizeCallback(this.service);
             else
                 this.getRequestToken();
@@ -249,8 +210,7 @@ var OAuthConsumer = {};
                 parameters: this.service.requestParams
             }
             // we fake this big time so we can catch a redirect
-            message.parameters['oauth_callback'] = COMPLETION_URI;
-
+            message.parameters['oauth_callback'] = this.service.completionURI;
             OAuth.completeRequest(message, this.service);
             var requestBody = OAuth.formEncode(message.parameters);
             this._log.debug("REQUEST: "+requestBody);
@@ -261,10 +221,10 @@ var OAuthConsumer = {};
             let self = this;
             call.onreadystatechange = function receiveRequestToken() {
                 if (call.readyState == 4) {
-                    var dump = call.status+" "+call.statusText
+                    var out = call.status+" "+call.statusText
                           +"\n\n"+call.getAllResponseHeaders()
                           +"\n"+call.responseText + "\n\n";
-                    self._log.debug("Successful call: " + dump);
+                    self._log.debug("Successful call: " + out);
                     var results = OAuth.decodeForm(call.responseText);
                     let token = OAuth.getParameter(results, "oauth_token");
                     self.getUserAuthorization(results, token);
@@ -308,7 +268,7 @@ var OAuthConsumer = {};
           
             this.service.tokenSecret = OAuth.getParameter(requestTokenResults, "oauth_token_secret");
             this._log.debug("   tokenSecret: "+this.service.tokenSecret)
-            message = {
+            let message = {
               method: this.service.requestMethod, 
               action: this.service.serviceProvider.accessTokenURL,
               parameters: {
@@ -374,7 +334,7 @@ var OAuthConsumer = {};
     OAuth2Handler.prototype = {
         startAuthentication: function()
         {
-            if (OAuthConsumer._getAccess(this.service))
+            if (OAuthConsumer.getAccess(this.service))
                 this.afterAuthorizeCallback(this.service);
             else
                 this.getUserAuthorization();
@@ -388,7 +348,7 @@ var OAuthConsumer = {};
                 parameters: this.service.requestParams
             }
             // we fake this big time so we can catch a redirect
-            message.parameters['redirect_uri'] = COMPLETION_URI;
+            message.parameters['redirect_uri'] = this.service.completionURI;
             message.parameters['client_id'] = this.service.consumerKey;
 
             var requestBody = OAuth.formEncode(message.parameters);
@@ -411,14 +371,13 @@ var OAuthConsumer = {};
                             });
         },
         
-        // XXX getAccessToken untested
-        getAccessToken: function(accessToken)
+        reauthorize: function()
         {
-            this._log.debug("Getting "+this.service.name+" access token: "+accessToken);
+            this._log.debug("reauthorize "+this.service.name+" access token: "+this.service.token);
 
             let parameters = this.service.accessParams;
-            parameters['code'] = accessToken;
-            parameters['callback'] = COMPLETION_URI;
+            parameters['code'] = this.service.token;
+            parameters['callback'] = this.service.completionURI;
             parameters['client_id'] = this.service.consumerKey;
             parameters['client_secret'] = this.service.consumerSecret;
 
@@ -447,8 +406,7 @@ var OAuthConsumer = {};
 
                         self.afterAuthorizeCallback(self.service);
                     } else {
-                        self._log.error("Unable to access Facebook: error " + call.status + " while getting access token.");
-                        dump(call.responseText);
+                        self._log.error("Unable to access "+self.service.name+": error " + call.status + " while getting access token.");
                         self.afterAuthorizeCallback(null);
                     }
                 }
@@ -459,14 +417,15 @@ var OAuthConsumer = {};
     this._authorizers["2.0"] = OAuth2Handler;
 
     this.openDialog = function(loginUrl, requestData, svc, afterAuthCallback) {
-        var win = window;
+        var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
+                           .getService(Components.interfaces.nsIWindowMediator);
+        var win = wm.getMostRecentWindow(null);
         var callbackFunc = function(token)
         {
-            dump("got access token "+token+"\n");
             win.setTimeout(afterAuthCallback, 0, requestData, token);
         };
 
-        window.openDialog("chrome://oauthorizer/content/loginPanel.xul",
+        win.openDialog("chrome://oauthorizer/content/loginPanel.xul",
 			  "oauth_authorization_dialog",
 			  "chrome,centerscreen,modal,dialog=no",
 			  loginUrl, callbackFunc, svc);
@@ -482,22 +441,35 @@ var OAuthConsumer = {};
      * accessParams.
      *
      * supported providers are at the top of this file.
+     * Some providers require you set a redirection URI when you get your keys,
+     * if so, use that same uri for the completionURI param, otherwise, make
+     * up a fake uri, such as http://oauthcompletion.local/.  This is used to
+     * catch the authorization code automatically.  If it is not provided,
+     * oauthorizer will not complete successfully.
      *
-     * @param providerName string      Name of provider
-     * @param key          string      api or oauth key from provider
-     * @param secret       string      secret key from provider
-     * @param callback     function
-     * @param params       object      extra parmams, such as scope
-     * @param extension    object      extIExtension instance, defaults to Application
+     * @param providerName  string      Name of provider
+     * @param key           string      api or oauth key from provider
+     * @param secret        string      secret key from provider
+     * @param completionURI string      redirection URI you configured with the provider
+     * @param callback      function    which will recieve one param, the service object
+     * @param params        object      extra parmams, such as scope
+     * @param extension     object      extIExtension instance, defaults to Application
      */
-    this.authorize = function(providerName, key, secret, callback, params, extension) {
-        var svc = OAuthConsumer.getProvider(providerName, key, secret);
+    this.authorize = function(providerName, key, secret, completionURI, callback, params, extension) {
+        var svc = OAuthConsumer.getProvider(providerName, key, secret, completionURI);
         if (params)
             svc.requestParams = params;
         if (typeof(extension) != 'undefined')
             svc.ext = extension;
-        var oAuth = OAuthConsumer.getAuthorizer(svc, callback);
-        oAuth.startAuthentication(); 
+        var handler = OAuthConsumer.getAuthorizer(svc, callback);
+
+        var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
+                           .getService(Components.interfaces.nsIWindowMediator);
+        var win = wm.getMostRecentWindow(null);
+        win.setTimeout(function () {
+            handler.startAuthentication();
+        }, 1);
+        return handler;
     }
 
 }).call(OAuthConsumer);
