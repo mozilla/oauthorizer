@@ -475,14 +475,13 @@ var OAuthConsumer = {};
      * @param completionURI string      redirection URI you configured with the provider
      * @param callback      function    which will recieve one param, the service object
      * @param params        object      extra parmams, such as scope
-     * @param extension     object      extIExtension instance, defaults to Application
+     * @param extensionID   string      extension id
      */
-    this.authorize = function(providerName, key, secret, completionURI, callback, params, extension) {
+    this.authorize = function(providerName, key, secret, completionURI, callback, params, extensionID) {
         var svc = OAuthConsumer.getProvider(providerName, key, secret, completionURI);
         if (params)
             svc.requestParams = params;
-        if (typeof(extension) != 'undefined')
-            svc.ext = extension;
+        svc.extensionID = extensionID;
         var handler = OAuthConsumer.getAuthorizer(svc, callback);
 
         var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
