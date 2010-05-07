@@ -35,18 +35,23 @@
 * ***** END LICENSE BLOCK ***** */
 let EXPORTED_SYMBOLS = ["OAuthConsumer"];
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cu = Components.utils;
 
-Components.utils.import("resource://oauthorizer/modules/oauth.js");
-Components.utils.import("resource://oauthorizer/modules/Log4Moz.js");
-Components.utils.import("resource://oauthorizer/modules/sha1.js");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
+Cu.import("resource://oauthorizer/modules/oauth.js");
+Cu.import("resource://oauthorizer/modules/Log4Moz.js");
+Cu.import("resource://oauthorizer/modules/sha1.js");
 
 var OAuthConsumer = {};
 
 (function()
 {
     var EXT_ID = "oauthorizer@mozillamessaging.com";
-    
+    this._log = SimpleLogger.getLogger("oathconsumer", "oauth.txt", true, true, false);
+
     function makeProvider(name, displayName, key, secret, completionURI, calls) {
         return {
             name: name,
@@ -61,9 +66,11 @@ var OAuthConsumer = {};
             requestMethod: "GET",
             oauthBase: null,
             completionURI: completionURI,
+            tokenRx: /oauth_verifier=([^&]*)/gi,
             serviceProvider: calls
         };
     }
+    this.makeProvider = makeProvider;
 
     this._providers = {
         // while some providers support POST, it seems all providers work
@@ -133,6 +140,7 @@ var OAuthConsumer = {};
                                      key, secret,
                                      completionURI, calls);
             p.version = "2.0";
+            p.tokenRx = /#access_token=([^&]*)/gi;
             return p;
         }
         
@@ -141,7 +149,74 @@ var OAuthConsumer = {};
     this.getProvider = function(providerName, key, secret, completionURI) {
         return this._providers[providerName](key, secret, completionURI);
     }
+
+    function xpath(xmlDoc, xpathString) {
+        let root = xmlDoc.ownerDocument == null ?
+          xmlDoc.documentElement : xmlDoc.ownerDocument.documentElement;
+        let nsResolver = xmlDoc.createNSResolver(root);
     
+        return xmlDoc.evaluate(xpathString, xmlDoc, nsResolver,
+                               Ci.nsIDOMXPathResult.ANY_TYPE, null);
+    }
+
+    this.discoverProvider = function discoverOAuth(xrds, providerName, displayName, consumerKey, consumerSecret, redirectURL) 
+    {
+        this._log.debug("requesting OAuth XRD from "+xrds);
+        let xrdsResourceLoader = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Components.interfaces.nsIXMLHttpRequest);
+        xrdsResourceLoader.open('GET', xrds, false);
+        xrdsResourceLoader.send(null);
+        if (xrdsResourceLoader.status != 200) {
+            this._log.warn("OAuth provider XRDS retrieval error (status " + xrdsResourceLoader.status + ")");
+            throw {error:"OAuth provider XRDS retrieval error",  
+                    message:"Communication error with OAuth provider (XRDS retrieval error " + xrdsResourceLoader.status + ")"};
+        }
+        let xrdsResourceDOM = xrdsResourceLoader.responseXML;
+        
+        let self = this;
+        function getChildFromResource(dom, type, child) {
+            let iter = xpath(xrdsResourceDOM, "//*[local-name()='Service']/*[local-name()='Type' and text()='"+type+"']/../*[local-name()='"+child+"']");
+            let elem = iter.iterateNext();
+            if (elem == null) {
+                self._log.warn("OAuth provider's XRD document has no service element with a type of '"+type+"'");
+                throw {error:"OAuths provider's XRD missing PoCo 1.0",  message:"Communication error with OAuth provider (no OAuth service in resource document)"};
+            }
+            self._log.debug("    type ["+type+"]=["+elem.textContent+"]");
+            return elem.textContent;
+        }
+        
+        let calls = {
+            requestTokenURL:      getChildFromResource(xrdsResourceDOM, 'http://oauth.net/core/1.0/endpoint/request', 'URI'),
+            userAuthorizationURL: getChildFromResource(xrdsResourceDOM, 'http://oauth.net/core/1.0/endpoint/authorize', 'URI'),
+            accessTokenURL:       getChildFromResource(xrdsResourceDOM, 'http://oauth.net/core/1.0/endpoint/access', 'URI')
+        };
+        
+        // is this PLAINTEXT or HMAC-SHA1?  We assume that all oauth endpoints use the same.
+        let iter = xpath(xrdsResourceDOM, "//*[local-name()='Service']/*[local-name()='URI' and text()='"+calls.requestTokenURL+"']/../*[local-name()='Type']");
+        let elem;
+        while ((elem = iter.iterateNext())) {
+            if (elem) {
+                if (elem.textContent == 'http://oauth.net/core/1.0/signature/PLAINTEXT') {
+                    calls.signatureMethod = 'PLAINTEXT';
+                    break;
+                }
+                else if (elem.textContent == 'http://oauth.net/core/1.0/signature/HMAC-SHA1') {
+                    calls.signatureMethod = 'HMAC-SHA1';
+                    break;
+                }
+            }
+        }
+        // is it a static consumerKey?
+        try {
+            consumerKey = getChildFromResource(xrdsResourceDOM,
+                                               'http://oauth.net/discovery/1.0/consumer-identity/static',
+                                               'LocalID');
+            consumerSecret = "";
+        } catch(e) {}
+  
+        return OAuthConsumer.makeProvider(providerName, displayName, consumerKey, consumerSecret, redirectURL, calls);
+    },
+  
+
     this._authorizers = {};
     this.getAuthorizer = function(svc, onCompleteCallback) {
         return new this._authorizers[svc.version](svc, onCompleteCallback);
@@ -491,6 +566,42 @@ var OAuthConsumer = {};
             handler.startAuthentication();
         }, 1);
         return handler;
+    }
+    
+    function makeURI(aSpec) {
+        return Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService).newURI(aSpec, null, null);
+    }
+
+    this.call = function(svc, message, aCallback) {
+        this._log.debug("OAuth based API call to '"+svc.name+"' at '"+message.action+"'");
+    
+        let realm = makeURI(message.action).host;
+        message.parameters['oauth_signature_method'] = "HMAC-SHA1";
+        message.parameters['oauth_token'] = svc.token;
+        OAuth.completeRequest(message, svc);
+
+        let self = this;
+        let req = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Components.interfaces.nsIXMLHttpRequest);
+        req.onreadystatechange = function OAuthConsumer_call_onreadystatechange(aEvt) {
+          if (req.readyState == 4) {
+            self._log.debug("call finished, calling callback");
+            aCallback(req);
+          }
+        }
+        
+        var requestBody = OAuth.formEncode(message.parameters);
+        if (message.method == "GET") {
+            let targetURL = message.action+"?"+requestBody;
+            this._log.debug("REQUEST: "+targetURL);
+            req.open(message.method, targetURL, true); 
+            req.send(null);
+        } else {
+            var authorizationHeader = OAuth.getAuthorizationHeader(realm, message.parameters);
+            req.open(message.method, message.action, true); 
+            req.setRequestHeader("Authorization", authorizationHeader);
+            req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            req.send(requestBody);
+        }
     }
 
 }).call(OAuthConsumer);

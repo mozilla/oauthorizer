@@ -9,7 +9,7 @@ function closeWindow ()
 
 function doneAuthorizing(oauth_verifier)
 {
-  window.arguments[1].call(null, oauth_verifier);		
+  window.arguments[1].call(null, oauth_verifier);
   window.close();
 }
 
@@ -42,6 +42,24 @@ var reporterListener = {
     delete this.securityDisplay;
     return this.securityDisplay = document.getElementById("security-display");
   },
+  
+  _checkForRedirect: function(aURL) {
+      var requestURI = aURL.split('?');
+      //dump("change: ["+aRequest.name+"]\n");
+      //dump("      : ["+requestURI[0]+"] "+typeof(requestURI[0])+"\n");
+      //dump("      : ["+requestURI[1]+"] "+typeof(requestURI[0])+"\n");
+      //dump("need: ["+window.arguments[2].completionURI+"] "+typeof(window.arguments[2].completionURI)+"\n");
+      //dump(" got? "+(aRequest.name.indexOf(window.arguments[2].completionURI)==0)+"\n");
+      //dump(" match? "+(aRequest.name == window.arguments[2].completionURI)+"\n");
+      if (aURL.indexOf(window.arguments[2].completionURI) == 0) {
+        var oauth_verifier = window.arguments[2].tokenRx.exec(aURL);
+        if (oauth_verifier) {
+          doneAuthorizing(oauth_verifier[1]);
+          return;
+        }
+      }
+  },
+  
   QueryInterface: function(aIID) {
     if (aIID.equals(Components.interfaces.nsIWebProgressListener)   ||
         aIID.equals(Components.interfaces.nsIWebProgressListener2)  ||
@@ -56,6 +74,9 @@ var reporterListener = {
                      /*in nsresult*/ aStatus) {
     if (aStateFlags & wpl.STATE_START &&
         aStateFlags & wpl.STATE_IS_NETWORK) {
+
+      this._checkForRedirect(aRequest.name);
+
       /*
        * As much as I would like to limit on some base url, oauth services
        * do not stick to a single base url all the time, e.g. login with
@@ -99,24 +120,7 @@ var reporterListener = {
     // XXX this needs to be cleaned up to handle differences better, the
     // callback url should be configurable as well
     this.securityDisplay.setAttribute('label', aLocation.host);
-    var requestURI = aLocation.spec.split('?');
-    //dump("change: ["+aLocation.spec+"]\n");
-    //dump("      : ["+requestURI[0]+"] "+typeof(requestURI[0])+"\n");
-    //dump("      : ["+requestURI[1]+"] "+typeof(requestURI[0])+"\n");
-    //dump("need: ["+window.arguments[2].completionURI+"] "+typeof(window.arguments[2].completionURI)+"\n");
-    //dump(" got? "+aLocation.spec.indexOf(window.arguments[2].completionURI)+"\n");
-    if (aLocation.spec.indexOf(window.arguments[2].completionURI) == 0) {
-      // OAuth 1.0
-      var oauth_verifier = /oauth_verifier=([^&]*)/gi.exec(aLocation.spec);
-      if (oauth_verifier) {
-        doneAuthorizing(oauth_verifier[1]);
-      }
-      // OAuth 2.0
-      var oauth_code = /#access_token=([^&]*)/gi.exec(aLocation.spec);
-      if (oauth_code) {
-        doneAuthorizing(oauth_code[1]);
-      }
-    }
+    this._checkForRedirect(aLocation.spec);
   },
 
   onStatusChange: function(/*in nsIWebProgress*/ aWebProgress,
