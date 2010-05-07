@@ -456,11 +456,11 @@ var OAuthConsumer = {};
                            null,
                            self.service,
                            function(results, accessToken) {
-                                self.service.token = accessToken;
+                                self.service.token = OAuth.decodePercent(accessToken);
                                 // we don't receive params, save the stuff
                                 // we need
                                 self.service.accessParams = {
-                                    'access_token': accessToken
+                                    'access_token': OAuth.decodePercent(accessToken)
                                 };
                                 // save into prefs
                                 OAuthConsumer._setAccess(self.service);
@@ -575,10 +575,14 @@ var OAuthConsumer = {};
     this.call = function(svc, message, aCallback) {
         this._log.debug("OAuth based API call to '"+svc.name+"' at '"+message.action+"'");
     
-        let realm = makeURI(message.action).host;
-        message.parameters['oauth_signature_method'] = "HMAC-SHA1";
-        message.parameters['oauth_token'] = svc.token;
-        OAuth.completeRequest(message, svc);
+        if (svc.version == "1.0") {
+            message.parameters['oauth_signature_method'] = "HMAC-SHA1";
+            message.parameters['oauth_token'] = svc.token;
+            OAuth.completeRequest(message, svc);
+        }
+        else if (svc.version == "2.0") {
+            message.parameters['access_token'] = svc.token;
+        }
 
         let self = this;
         let req = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Components.interfaces.nsIXMLHttpRequest);
@@ -596,6 +600,7 @@ var OAuthConsumer = {};
             req.open(message.method, targetURL, true); 
             req.send(null);
         } else {
+            let realm = makeURI(message.action).host;
             var authorizationHeader = OAuth.getAuthorizationHeader(realm, message.parameters);
             req.open(message.method, message.action, true); 
             req.setRequestHeader("Authorization", authorizationHeader);
