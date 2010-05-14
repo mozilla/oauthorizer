@@ -345,20 +345,25 @@ var OAuthConsumer = {};
             call.onreadystatechange = function receiveAccessToken() {
                 var results = null;
                 if (call.readyState == 4) {
-                  self._log.debug("Finished getting "+self.service.name+
-                                  " request token: " + call.status+" "+call.statusText
-                    +"\n"+call.getAllResponseHeaders()+"\n"+call.responseText);
-                    
-                  results = OAuth.decodeForm(call.responseText);
-                  
-                  self.service.accessParams = OAuth.getParameterMap(results);
-                  self.service.token = self.service.accessParams["oauth_token"];
-                  self.service.tokenSecret = self.service.accessParams["oauth_token_secret"];
-
-                  // save into prefs
-                  OAuthConsumer._setAccess(self.service);
-
-                  self.afterAuthorizeCallback(self.service);
+                    if (call.status == 200) {
+                        self._log.debug("Finished getting "+self.service.name+
+                                        " request token: " + call.status+" "+call.statusText
+                          +"\n"+call.getAllResponseHeaders()+"\n"+call.responseText);
+                          
+                        results = OAuth.decodeForm(call.responseText);
+                        
+                        self.service.accessParams = OAuth.getParameterMap(results);
+                        self.service.token = self.service.accessParams["oauth_token"];
+                        self.service.tokenSecret = self.service.accessParams["oauth_token_secret"];
+        
+                        // save into prefs
+                        OAuthConsumer._setAccess(self.service);
+        
+                        self.afterAuthorizeCallback(self.service);
+                    } else {
+                        self._log.error("Unable to access "+self.service.name+": error " + call.status + " while getting access token:" + call.responseText);
+                        self.afterAuthorizeCallback({error:"API Error", message:"Error while accessing oauth: " + call.status+": "+call.responseText});
+                    }
                 }
             };
           
@@ -423,6 +428,11 @@ var OAuthConsumer = {};
     };
     this._authorizers["1.0"] = OAuth1Handler;
 
+    /**
+     * OAuth2Handler deals with authorization using the OAuth 2.0 protocol.
+     * Currently this is only used with Facebook, implementation may be
+     * slightly FB specific.
+     */
     function OAuth2Handler(oauthSvc, afterAuthorizeCallback) {
         this._log = SimpleLogger.getLogger("oath.authorizer", "oauth.txt", true, true, false);
         this.service = oauthSvc
@@ -471,6 +481,18 @@ var OAuthConsumer = {};
         reauthorize: function()
         {
             this._log.debug("reauthorize "+this.service.name+" access token: "+this.service.token);
+            
+            // Facebook specific token format...
+            // check expires {secret}.3600.{expires_at_seconds_after_epoch}-{user_id}
+            // if we've expired, go through the full user authorization
+            let details = /(.*?)\.3600\.(.*?)-(.*)/gi.exec(this.service.token);
+            if (details && details[2]) {
+                var expires = new Date(details[2] * 1000);
+                if (expires < Date.now()) {
+                    this.getUserAuthorization();
+                    return;
+                }
+            }
 
             let parameters = this.service.accessParams;
             parameters['code'] = this.service.token;
@@ -503,8 +525,8 @@ var OAuthConsumer = {};
 
                         self.afterAuthorizeCallback(self.service);
                     } else {
-                        self._log.error("Unable to access "+self.service.name+": error " + call.status + " while getting access token.");
-                        self.afterAuthorizeCallback(null);
+                        self._log.error("Unable to access "+self.service.name+": error " + call.status + " while getting access token:" + call.responseText);
+                        self.afterAuthorizeCallback({error:"API Error", message:"Error while accessing oauth: " + call.status+": "+call.responseText});
                     }
                 }
             }
@@ -572,6 +594,14 @@ var OAuthConsumer = {};
         return Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService).newURI(aSpec, null, null);
     }
 
+    /**
+     * call wraps an API call with OAuth data.  You prepare the message, provide
+     * a callback and we'll let  you know when we're done.
+     *
+     * @param svc      object   service object received in the authorize callback
+     * @param message  object   message object contains action (url), method (GET|POST) and params (object)
+     * @param callback function receives one param, nsIXMLHttpRequest
+     */
     this.call = function(svc, message, aCallback) {
         this._log.debug("OAuth based API call to '"+svc.name+"' at '"+message.action+"'");
     

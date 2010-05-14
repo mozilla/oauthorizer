@@ -45,12 +45,12 @@ var reporterListener = {
   
   _checkForRedirect: function(aURL) {
       var requestURI = aURL.split('?');
-      //dump("change: ["+aRequest.name+"]\n");
+      //dump("change: ["+aURL+"]\n");
       //dump("      : ["+requestURI[0]+"] "+typeof(requestURI[0])+"\n");
       //dump("      : ["+requestURI[1]+"] "+typeof(requestURI[0])+"\n");
       //dump("need: ["+window.arguments[2].completionURI+"] "+typeof(window.arguments[2].completionURI)+"\n");
-      //dump(" got? "+(aRequest.name.indexOf(window.arguments[2].completionURI)==0)+"\n");
-      //dump(" match? "+(aRequest.name == window.arguments[2].completionURI)+"\n");
+      //dump(" got? "+(aURL.indexOf(window.arguments[2].completionURI)==0)+"\n");
+      //dump(" match? "+(aURL == window.arguments[2].completionURI)+"\n");
       if (aURL.indexOf(window.arguments[2].completionURI) == 0) {
         var oauth_verifier = window.arguments[2].tokenRx.exec(aURL);
         if (oauth_verifier) {
