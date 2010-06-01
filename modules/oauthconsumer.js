@@ -42,7 +42,7 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 Cu.import("resource://oauthorizer/modules/oauth.js");
-Cu.import("resource://oauthorizer/modules/Log4Moz.js");
+Cu.import("resource://oauthorizer/modules/log4moz.js");
 Cu.import("resource://oauthorizer/modules/sha1.js");
 
 var OAuthConsumer = {};
