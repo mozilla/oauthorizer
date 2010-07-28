@@ -162,7 +162,7 @@ var OAuthConsumer = {};
     this.discoverProvider = function discoverOAuth(xrds, providerName, displayName, consumerKey, consumerSecret, redirectURL) 
     {
         this._log.debug("requesting OAuth XRD from "+xrds);
-        let xrdsResourceLoader = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Components.interfaces.nsIXMLHttpRequest);
+        let xrdsResourceLoader = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Ci.nsIXMLHttpRequest);
         xrdsResourceLoader.open('GET', xrds, false);
         xrdsResourceLoader.send(null);
         if (xrdsResourceLoader.status != 200) {
@@ -224,8 +224,8 @@ var OAuthConsumer = {};
     
     this.__defineGetter__('prefs', function() {
         delete this.prefs;
-        let prefService = Components.classes["@mozilla.org/preferences-service;1"].
-                                     getService(Components.interfaces.nsIPrefService);
+        let prefService = Cc["@mozilla.org/preferences-service;1"].
+                                     getService(Ci.nsIPrefService);
         return this.prefs = prefService.getBranch("extensions."+EXT_ID+".");
     });
     
@@ -290,8 +290,8 @@ var OAuthConsumer = {};
             var requestBody = OAuth.formEncode(message.parameters);
             this._log.debug("REQUEST: "+requestBody);
         
-            var call = Components.classes["@mozilla.org/xmlextras/xmlhttprequest;1"]
-                                    .createInstance(Components.interfaces.nsIXMLHttpRequest);
+            var call = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
+                                    .createInstance(Ci.nsIXMLHttpRequest);
         
             let self = this;
             call.onreadystatechange = function receiveRequestToken() {
@@ -306,7 +306,7 @@ var OAuthConsumer = {};
                 }
             };
             call.onerror = function(event) {
-                var request = event.target.channel.QueryInterface(Components.interfaces.nsIRequest);
+                var request = event.target.channel.QueryInterface(Ci.nsIRequest);
                 self._log.debug("got an error!");
             }
             if (message.method == "GET") {
@@ -338,8 +338,8 @@ var OAuthConsumer = {};
             OAuth.completeRequest(message, this.service);
             var requestBody = OAuth.formEncode(message.parameters);
           
-            var call = Components.classes["@mozilla.org/xmlextras/xmlhttprequest;1"]
-                                    .createInstance(Components.interfaces.nsIXMLHttpRequest);
+            var call = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
+                                    .createInstance(Ci.nsIXMLHttpRequest);
         
             let self = this;
             call.onreadystatechange = function receiveAccessToken() {
@@ -503,7 +503,7 @@ var OAuthConsumer = {};
             var requestBody = OAuth.formEncode(parameters);
             let targetURL = this.service.serviceProvider.accessTokenURL + "?" + requestBody;
 
-            let call = Components.classes["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Components.interfaces.nsIXMLHttpRequest);  
+            let call = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Ci.nsIXMLHttpRequest);  
             this._log.debug("REQUEST: "+targetURL);
 
             let self = this;
@@ -536,8 +536,8 @@ var OAuthConsumer = {};
     this._authorizers["2.0"] = OAuth2Handler;
 
     this.openDialog = function(loginUrl, requestData, svc, afterAuthCallback) {
-        var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
-                           .getService(Components.interfaces.nsIWindowMediator);
+        var wm = Cc["@mozilla.org/appshell/window-mediator;1"]
+                           .getService(Ci.nsIWindowMediator);
         var win = wm.getMostRecentWindow(null);
         var callbackFunc = function(token)
         {
@@ -545,9 +545,9 @@ var OAuthConsumer = {};
         };
 
         win.openDialog("chrome://oauthorizer/content/loginPanel.xul",
-			  "oauth_authorization_dialog",
-			  "chrome,centerscreen,modal,dialog=no",
-			  loginUrl, callbackFunc, svc);
+                       "oauth_authorization_dialog",
+                       "chrome,centerscreen,modal,dialog=no",
+                       loginUrl, callbackFunc, svc);
     }
 
     /**
@@ -581,8 +581,8 @@ var OAuthConsumer = {};
         svc.extensionID = extensionID;
         var handler = OAuthConsumer.getAuthorizer(svc, callback);
 
-        var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
-                           .getService(Components.interfaces.nsIWindowMediator);
+        var wm = Cc["@mozilla.org/appshell/window-mediator;1"]
+                           .getService(Ci.nsIWindowMediator);
         var win = wm.getMostRecentWindow(null);
         win.setTimeout(function () {
             handler.startAuthentication();
@@ -604,18 +604,30 @@ var OAuthConsumer = {};
      */
     this.call = function(svc, message, aCallback) {
         this._log.debug("OAuth based API call to '"+svc.name+"' at '"+message.action+"'");
-    
+        
+        // 1.0 GET: query should contain results of formEncode
+        // 1.0 POST: message body should contain non-OAuth parameters only
+        // 2.0 GET: query should contain results of formEncode
+        // 2.0 POST: message body contains OAuth parameters
+        var requestBody;
         if (svc.version == "1.0") {
+            if (message.method != "GET") {
+                requestBody = OAuth.formEncode(message.parameters);
+            }
             message.parameters['oauth_signature_method'] = "HMAC-SHA1";
             message.parameters['oauth_token'] = svc.token;
             OAuth.completeRequest(message, svc);
+            if (message.method == "GET"){
+                requestBody = OAuth.formEncode(message.parameters); // side effectss
+            } 
         }
         else if (svc.version == "2.0") {
             message.parameters['access_token'] = svc.token;
+            requestBody = OAuth.formEncode(message.parameters);
         }
 
         let self = this;
-        let req = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Components.interfaces.nsIXMLHttpRequest);
+        let req = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Ci.nsIXMLHttpRequest);
         req.onreadystatechange = function OAuthConsumer_call_onreadystatechange(aEvt) {
           if (req.readyState == 4) {
             self._log.debug("call finished, calling callback");
@@ -623,21 +635,22 @@ var OAuthConsumer = {};
           }
         }
         
-        var requestBody = OAuth.formEncode(message.parameters);
         if (message.method == "GET") {
             let targetURL = message.action+"?"+requestBody;
-            this._log.debug("REQUEST: "+targetURL);
+            this._log.debug("GET REQUEST: "+targetURL);
             req.open(message.method, targetURL, true); 
             req.send(null);
         } else {
             let realm = makeURI(message.action).host;
             var authorizationHeader = OAuth.getAuthorizationHeader(realm, message.parameters);
+            this._log.debug("" + message.method + " REQUEST: "+message.action + "\nAuthorization: " + authorizationHeader + "\n" + requestBody);
             req.open(message.method, message.action, true); 
             req.setRequestHeader("Authorization", authorizationHeader);
             req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             req.send(requestBody);
         }
     }
+
 
 }).call(OAuthConsumer);
 
