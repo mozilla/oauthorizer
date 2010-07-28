@@ -98,7 +98,7 @@ subst_names := \
 export $(subst_names)
 export substitute = perl -pe 's/@([^@]+)@/defined $$$$ENV{$$$$1} ? $$$$ENV{$$$$1} : $$$$&/ge'
 
-SLINK = ln -sf
+SLINK = ln -sF
 ifneq ($(findstring MINGW,$(shell uname -s)),)
   SLINK = cp -r
   export NO_SYMLINK = 1
@@ -112,18 +112,17 @@ test: build
 	$(MAKE) -k -C tests/unit
 
 setup:
-	rm -rf $(objdir)
 	mkdir -p $(objdir)
 	mkdir -p $(stage_dir)
 	mkdir -p $(xpi_dir)
 
 build: setup
-	$(SLINK) $(TOPSRCDIR)/chrome.manifest $(stage_dir)/chrome.manifest
-	$(SLINK) $(TOPSRCDIR)/install.rdf $(stage_dir)/install.rdf
-	$(SLINK) $(TOPSRCDIR)/content $(stage_dir)/content
-	$(SLINK) $(TOPSRCDIR)/locale $(stage_dir)/locale
-	$(SLINK) $(TOPSRCDIR)/modules $(stage_dir)/modules
-	$(SLINK) $(TOPSRCDIR)/skin $(stage_dir)/skin
+	test -d $(stage_dir)/chrome.manifest || $(SLINK) $(TOPSRCDIR)/chrome.manifest $(stage_dir)/chrome.manifest
+	test -d $(stage_dir)/install.rdf || $(SLINK) $(TOPSRCDIR)/install.rdf $(stage_dir)/install.rdf
+	test -d $(stage_dir)/content || $(SLINK) $(TOPSRCDIR)/content $(stage_dir)/content
+	test -d $(stage_dir)/locale || $(SLINK) $(TOPSRCDIR)/locale $(stage_dir)/locale
+	test -d $(stage_dir)/modules || $(SLINK) $(TOPSRCDIR)/modules $(stage_dir)/modules
+	test -d $(stage_dir)/skin || $(SLINK) $(TOPSRCDIR)/skin $(stage_dir)/skin
 	
 
 xpi_name := oauthorizer-$(oauth_version)-$(xpi_type).xpi
