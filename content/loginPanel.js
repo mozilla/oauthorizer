@@ -1,4 +1,10 @@
 
+try {
+Components.utils.import("resource://gre/modules/AddonManager.jsm");
+} catch(e) {
+  
+}
+
 const wpl = Components.interfaces.nsIWebProgressListener;
 
 function closeWindow ()
@@ -180,12 +186,24 @@ function loadLoginFrame()
   var name, desc;
   let svc = window.arguments[2];
   if (svc && svc.extensionID) {
-    let ext = Application.extensions.get(svc.extensionID);
-    desc = bundle.getFormattedString('extension.txt',[ext.name, svc.displayName]);
+    if (typeof(AddonManager) != 'undefined') {
+      AddonManager.getAddonByID(svc.extensionID, function(addon) {
+        desc = bundle.getFormattedString('extension.txt',[addon.name, svc.displayName]);
+        loadOAuthLoginFrame(desc, svc);
+      });
+      return;
+    } else {
+      let ext = Application.extensions.get(svc.extensionID);
+      desc = bundle.getFormattedString('extension.txt',[ext.name, svc.displayName]);
+    }
   } else {
     name = Application.name;
     desc = bundle.getFormattedString('application.txt',[name, name, svc?svc.displayName:"the interwebs"]);
   }
+  loadOAuthLoginFrame(desc, svc);
+}
+
+function loadOAuthLoginFrame(desc) {
   let node = document.createTextNode(desc);
   document.getElementById('message').appendChild(node);
 
