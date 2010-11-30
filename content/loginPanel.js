@@ -50,19 +50,16 @@ var reporterListener = {
   },
   
   _checkForRedirect: function(aURL) {
-      var requestURI = aURL.split('?');
+      //var requestURI = aURL.split('?');
       //dump("change: ["+aURL+"]\n");
       //dump("      : ["+requestURI[0]+"] "+typeof(requestURI[0])+"\n");
       //dump("      : ["+requestURI[1]+"] "+typeof(requestURI[0])+"\n");
       //dump("need: ["+window.arguments[2].completionURI+"] "+typeof(window.arguments[2].completionURI)+"\n");
       //dump(" got? "+(aURL.indexOf(window.arguments[2].completionURI)==0)+"\n");
       //dump(" match? "+(aURL == window.arguments[2].completionURI)+"\n");
-      if (aURL.indexOf(window.arguments[2].completionURI) == 0) {
-        var oauth_verifier = window.arguments[2].tokenRx.exec(aURL);
-        if (oauth_verifier) {
-          doneAuthorizing(oauth_verifier[1]);
-          return;
-        }
+      var oauth_verifier = window.arguments[2].tokenRx.exec(aURL);
+      if (oauth_verifier) {
+        doneAuthorizing(oauth_verifier[1]);
       }
   },
   
