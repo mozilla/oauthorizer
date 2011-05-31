@@ -13,6 +13,7 @@ process.
 * Chrome code must provide any OAuth keys necessary for the provider
 * A generic mechanism to call any arbitrary OAuth wrapped api call
 * OAuth 1 and 2 are supported
+* built-in oauth endpoints for Yahoo, Google, Facebook, LinkedIn, Plaxo and Twitter
 
 ### TODO
 
@@ -20,6 +21,8 @@ process.
 * Move stored tokens into a secure store (current stored in prefs)
 * Make callback uri's unecessary for general use (ie. provide default)
 * Make some api's available from web content
+* Flesh out discovery code
+* Consider whether any providers should be built-in, or if the list should be expanded
 * code cleanup, documentation, reviews
 
 ## Example use
@@ -39,6 +42,8 @@ process.
 	    "http://oauthcallback.local/access.xhtml"
 	];
     let svc = null;
+    let secret = "My Consumer Secret";
+    let key = "My Consumer Key";
 
     function authorizationCallback(svcObj) {
         dump("*********FINISHED**********\naccess token: "+
@@ -57,6 +62,8 @@ process.
     };
 
     // req is an XMLHttpRequest object
+    // a more complete example is at
+    // https://hg.mozilla.org/labs/people/file/2a4b293fcbe7/modules/importers/gmail.js
     oauthCallback(req) {
         log.info("Google Contacts API: " + req.status+" "+req.statusText);
         // you may need to handle a 401
@@ -84,7 +91,39 @@ process.
     // svc is retreived from the authorize callback above
     OAuthConsumer.call(svc, message, oauthCallback);
 
+
 ### Reset OAuth access
 
     OAuthConsumer.resetAccess(provider, key, secret);
+
+
+### Using an OAuth provider that is not built into OAuthorizer
+
+Adding a non-built-in OAuth provider requires a little more knowledge but not
+much.  You must always do this once before any other calls into OAuthConsumer if
+you are accessing a non-built-in OAuth provider.
+
+    let providerName = 'yahoo';
+    let secret = "My Consumer Secret";
+    let key = "My Consumer Key";
+    let calls = {
+          signatureMethod     : "HMAC-SHA1",
+          requestTokenURL     : "https://api.login.yahoo.com/oauth/v2/get_request_token",
+          userAuthorizationURL: "https://api.login.yahoo.com/oauth/v2/request_auth",
+          accessTokenURL      : "https://api.login.yahoo.com/oauth/v2/get_token"
+        };
+    let myprovider = OAuthConsumer.makeProvider(providerName, 'Yahoo!',
+                                                key, secret,
+                                                completionURI, calls);
+    // XXX should be handled internally by makeProvider
+    OAuthConsumer._providers[providerName] = myprovider;
+
+
+#### Configuring an OAuth provider via XRD
+
+XXX Discovery is simplistic, probably doesn't work 100%.
+
+    OAuthConsumer.discoverProvider(xrdsURI, providerName, displayName,
+                                   consumerKey, consumerSecret, redirectURL)
+
 
