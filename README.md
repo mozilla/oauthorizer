@@ -28,6 +28,7 @@ process.
 
     Components.utils.import("resource://oauthorizer/modules/oauthconsumer.js");
 
+    let provider = 'google'; // just a key name for storing/retrieving data
     let [key, secret, params, completionURI] = [
 	    "anonymous",
 	    "anonymous",
