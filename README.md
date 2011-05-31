@@ -42,8 +42,6 @@ process.
 	    "http://oauthcallback.local/access.xhtml"
 	];
     let svc = null;
-    let secret = "My Consumer Secret";
-    let key = "My Consumer Key";
 
     function authorizationCallback(svcObj) {
         dump("*********FINISHED**********\naccess token: "+
