@@ -1,0 +1,7 @@
+{
+    "name": "oauthorizer",
+    "id": "oauthorizer@mozilla.org",
+    "description": "An addon that enables easy use of oauth for other addons",
+    "author": "Mozilla",
+    "version": "0.1.5"
+}
