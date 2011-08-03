@@ -52,7 +52,7 @@ var OAuthConsumer = {};
     var EXT_ID = "oauthorizer@mozillamessaging.com";
     this._log = SimpleLogger.getLogger("oathconsumer", "oauth.txt", true, true, false);
 
-    function makeProvider(name, displayName, key, secret, completionURI, calls) {
+    function makeProvider(name, displayName, key, secret, completionURI, calls, doNotStore) {
         return {
             name: name,
             displayName: displayName,
@@ -67,7 +67,8 @@ var OAuthConsumer = {};
             oauthBase: null,
             completionURI: completionURI,
             tokenRx: /oauth_verifier=([^&]*)/gi,
-            serviceProvider: calls
+            serviceProvider: calls,
+            useInternalStorage: !doNotStore
         };
     }
     this.makeProvider = makeProvider;
@@ -237,20 +238,24 @@ var OAuthConsumer = {};
         this.prefs.setCharPref(pref, "");
     }
     this._setAccess = function(svc) {
-        let key = this._makePrefKey(svc.name, svc.consumerKey, svc.consumerSecret);
-        this.prefs.setCharPref(key, JSON.stringify(svc.accessParams));
+        if (svc.useInternalStorage) {
+            let key = this._makePrefKey(svc.name, svc.consumerKey, svc.consumerSecret);
+            this.prefs.setCharPref(key, JSON.stringify(svc.accessParams));
+        }
     }
     this.getAccess = function(svc) {
-        let key = this._makePrefKey(svc.name, svc.consumerKey, svc.consumerSecret);
-        var params = null;
-        try {
-            params = this.prefs.getCharPref(key, null);
-        } catch(e) {
-            return false;
-        }
-        if (!params)
-            return false;
-        svc.accessParams = JSON.parse(params);
+        if (svc.useInternalStorage) {
+            let key = this._makePrefKey(svc.name, svc.consumerKey, svc.consumerSecret);
+            var params = null;
+            try {
+                params = this.prefs.getCharPref(key, null);
+            } catch(e) {
+                return false;
+            }
+            if (!params)
+                return false;
+            svc.accessParams = JSON.parse(params);
+        } // else svc.accessParams are what is already in the service.
         if (svc.version == "1.0") {
             svc.token = svc.accessParams["oauth_token"];
             svc.tokenSecret = svc.accessParams["oauth_token_secret"];
