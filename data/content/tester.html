@@ -1,0 +1,116 @@
+<html>
+  <head>
+    Test Login/Authorization
+  </head>
+  <script type="application/x-javascript">
+    // this is an example of using oauthorizer
+    // Note the magic of jetpack's page-mod will have injected an
+    // 'OAuthConsumer' global.
+
+    // every addon or application should provide its own keys,
+    // provider = [key, secret, params]
+    var oauthdata = {
+	'yahoo': [
+	    "dj0yJmk9OXRIeE1Bbk9qeUF5JmQ9WVdrOU9YRkhNWGxMTjJzbWNHbzlPVFF6TURRNE5EWTEmcz1jb25zdW1lcnNlY3JldCZ4PWI3",
+	    "49a19e581d1920b49fd4977e744f1bd16a22ad2c",
+	    null,
+	    "http://oauthcallback.local/access.xhtml"
+	],
+	'google': [
+	    "anonymous",
+	    "anonymous",
+	    {
+	    'xoauth_displayname': "Mozilla Authorizer",
+	    'scope': 'http://www.google.com/m8/feeds' // contacts
+	    },
+	    "http://oauthcallback.local/access.xhtml"
+	],
+	'twitter': [
+	    "lppkBgcpuhe2TKZIRVoQg",
+	    "M6hwPkgEyqxkDz583LFYAv5dTVg1AsKIXHFPiIFhsM",
+	    null,
+	    "http://oauthcallback.local/access.xhtml"
+	],
+	'linkedin': [
+	    "Ro8OWZrx0j8HaZPHyRxB9IEx8ZPjSlWksYW4PcPXkyFBWNZEZmQ-sLYShtpMk1g7",
+	    "pmpd9ZHZu2tDHiwDn3rqiBuxLluzltrSbFjIjZbebwxQyHzA09VxT-cXrtEJxZ-t",
+	    null,
+	    "http://oauthcallback.local/access.xhtml"
+	],
+	'plaxo': ['anonymous', '', null,
+		  "http://thunderbird.local/access.xhtml"],
+	'facebook': [
+	    "110796232295543",
+	    "19fd15e594991fd88e05b3534403e5c8",
+	    {
+	    'scope': 'friends_birthday,friends_online_presence,friends_photos,friends_website',
+	    'type': "user_agent",
+	    'display': "popup"
+	    },
+	    "http://www.oauthcallback.local/postauthorize"
+	]
+    }
+    function testProvider(provider) {
+	    document.getElementById("accessToken").textContent = "<authorizing...>";
+	    document.getElementById("secret").textContent = "";
+	var [key, secret, params, completionURI] = oauthdata[provider];
+        function testCallback(svc) {
+            dump("*********FINISHED**********\naccess token: "+svc.token+"\n  secret: "+svc.tokenSecret+"\n");
+	    document.getElementById("accessToken").textContent = svc.token;
+	    document.getElementById("secret").textContent = svc.tokenSecret;
+        }
+	OAuthConsumer.authorize(provider, key, secret, completionURI, testCallback, params);
+    }
+
+    function testDialog() {
+        window.openDialog("chrome://oauthorizer/content/loginPanel.xul",
+			  "Login/Authorization Panel",
+			  "chrome,centerscreen,modal,dialog=no",
+			  "", function(){});
+    }
+
+    function resetProvider(provider) {
+	var [key, secret, params, completionURI] = oauthdata[provider];
+	OAuthConsumer.resetAccess(provider, key, secret);
+    }
+  </script>
+  <body>
+    <table>
+      <tr>
+        <td>Yahoo</td>
+        <td><button onclick="testProvider('yahoo');">Authorize</button></td>
+        <td><button onclick="resetProvider('yahoo');">Reset</button></td>
+      </tr>
+      <tr>
+        <td>Google</td>
+        <td><button onclick="testProvider('google');">Authorize</button></td>
+        <td><button onclick="resetProvider('google');">Reset</button></td>
+      </tr>
+      <tr>
+        <td>Twitter</td>
+        <td><button onclick="testProvider('twitter');">Authorize</button></td>
+        <td><button onclick="resetProvider('twitter');">Reset</button></td>
+      </tr>
+      <tr>
+        <td>LinkedIn</td>
+        <td><button onclick="testProvider('linkedin');">Authorize</button></td>
+        <td><button onclick="resetProvider('linkedin');">Reset</button></td>
+      </tr>
+      <tr>
+        <td>Plaxo</td>
+        <td><button onclick="testProvider('plaxo');">Authorize</button></td>
+        <td><button onclick="resetProvider('plaxo');">Reset</button></td>
+      </tr>
+      <tr>
+        <td>Facebook</td>
+        <td><button onclick="testProvider('facebook');">Authorize</button></td>
+        <td><button onclick="resetProvider('facebook');">Reset</button></td>
+      </tr>
+      <tr>
+        <td><button onclick="testDialog();">Auth Dialog</button></td>
+      </tr>
+    </table>
+    <p>Access Token: <span id="accessToken"></span></p>
+    <p>Secret: <span id="secret"></span></p>
+  </body>
+</html>
