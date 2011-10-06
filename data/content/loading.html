@@ -2,28 +2,36 @@
 <html>
   <style type="text/css">
     html, body {
+      margin: 0;
+      padding: 0;
       height: 100%;
+      text-align: center;
     }
     
     #authorizing {
-      width: 100px;
-      height: 100px;
-      text-align: center;
-      font-size: 30px;
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      margin-left: -50px; 
-      /* Half the width of the DIV tag which is 50 pixels */
-      margin-top: -50px; 
-      /* Half the height of the DIV tag which is also 50 pixels */
+      position: relative;
+      top: 30%;
+      margin: 0 auto;
+      padding: 10px 20px;
+      display: inline-block;
+      color: #333;
+      background-color: #eee;
+      border: 1px solid #aaa;
+      border-radius: 3px;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 150%;
+      line-height: 150%;
+      box-shadow: 3px 3px 3px rgba(200,200,200,0.7);
+    }
+    img {
+      border: none;
+      vertical-align: middle;
     }
   </style>
 
   <body>
     <div id="authorizing">
-      <img src="loader.gif"/>
-      Connecting...
+      <img src="loader.gif"/> connecting...
     </div>
   </body>
 </html>
