@@ -47,7 +47,7 @@ stage_dir=$(objdir)/stage
 xpi_dir=$(objdir)/xpi
 error=exit 1
 
-oauth_version := 0.1.2
+oauth_version := 0.1.5
 
 ifeq ($(release_build),)
   xpi_type := dev
