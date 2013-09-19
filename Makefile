@@ -103,6 +103,8 @@ ifneq ($(findstring MINGW,$(shell uname -s)),)
   SLINK = cp -r
   export NO_SYMLINK = 1
 endif
+SLINK = cp -r
+export NO_SYMLINK = 1
 
 all: build
 
