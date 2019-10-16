@@ -19,7 +19,7 @@ process.
 
 * Hide tokens from code using OAuthorizer
 * Move stored tokens into a secure store (current stored in prefs)
-* Make callback uri's unecessary for general use (ie. provide default)
+* Make callback uri's unnecessary for general use (ie. provide default)
 * Make some api's available from web content
 * Flesh out discovery code
 * Consider whether any providers should be built-in, or if the list should be expanded
